@@ -9,6 +9,7 @@ COPY frontend/package.json frontend/package-lock.json ./
 RUN node -e "const fs=require('fs');const l=JSON.parse(fs.readFileSync('package-lock.json'));for(const p of Object.values(l.packages||{}))delete p.resolved;fs.writeFileSync('package-lock.json',JSON.stringify(l,null,2))" \
   && npm ci --no-audit --no-fund --registry=https://registry.npmjs.org
 COPY frontend/ ./
+COPY shared/ /build/shared/
 RUN npm run generate
 
 # ===== 后端构建：安装依赖（含原生模块编译） =====
@@ -18,6 +19,7 @@ COPY backend/package.json backend/package-lock.json ./
 RUN node -e "const fs=require('fs');const l=JSON.parse(fs.readFileSync('package-lock.json'));for(const p of Object.values(l.packages||{}))delete p.resolved;fs.writeFileSync('package-lock.json',JSON.stringify(l,null,2))" \
   && npm ci --no-audit --no-fund --registry=https://registry.npmjs.org
 COPY backend/ ./
+COPY shared/ /build/shared/
 # 运行时与既有服务器部署一致走 tsx（源码存在 bundler 风格无扩展名 import，tsc 产物 node 直跑不可行）；
 # tsx 是 devDependency，prune 后单独补装
 RUN npm prune --omit=dev && npm i tsx@^4.21.0 --no-save --no-audit --no-fund --registry=https://registry.npmjs.org
@@ -35,6 +37,7 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 COPY --from=backend-build /build/backend/src ./backend/src
+COPY --from=backend-build /build/shared ./shared
 COPY --from=backend-build /build/backend/node_modules ./backend/node_modules
 COPY --from=backend-build /build/backend/package.json ./backend/package.json
 COPY --from=backend-build /build/backend/tsconfig.json ./backend/tsconfig.json

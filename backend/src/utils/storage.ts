@@ -57,7 +57,7 @@ function getExtFromUrl(url: string): string {
  */
 export function getAbsolutePath(relativePath: string): string {
   if (relativePath.startsWith('static/')) {
-    return path.join(STORAGE_ROOT, '..', relativePath)
+    return path.join(STORAGE_ROOT, relativePath.slice('static/'.length))
   }
   return path.join(STORAGE_ROOT, relativePath)
 }

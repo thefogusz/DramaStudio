@@ -757,7 +757,7 @@ const providerPresets = {
 }
 const falEnabled = ref(['kling'])
 const falDefault = ref('kling')
-const savedFal = computed(() => [...cfgs.value].filter(c => c.provider === 'fal' && c.service_type === 'video' && c.base_url === 'https://queue.fal.run').sort((a,b) => (b.priority || 0) - (a.priority || 0))[0])
+const savedFal = computed(() => [...cfgs.value].filter(c => c.provider === 'fal' && c.service_type === 'video' && c.base_url?.replace(/\/$/, '') === 'https://queue.fal.run').sort((a,b) => (b.priority || 0) - (a.priority || 0))[0])
 watch(falEnabled, ids => { if (!ids.includes(falDefault.value)) falDefault.value = ids[0] || '' })
 
 
@@ -816,7 +816,7 @@ async function toggleCfg(c) { await aiConfigAPI.update(c.id, { is_active: !c.is_
 async function delCfg(id) { await aiConfigAPI.del(id); toast.success(t('index.deleted')); loadCfgs() }
 async function applyFalQuickConfig() {
   const apiKey = falApiKey.value.trim()
-  if (!apiKey && !savedFal.value) { toast.warning(t('settings.ai.apiKeyRequired')); return }
+  if (!apiKey && !savedFal.value?.api_key) { toast.warning(t('settings.ai.apiKeyRequired')); return }
   falSaving.value = true
   try {
     const selected = falModels.filter(m => falEnabled.value.includes(m.id))

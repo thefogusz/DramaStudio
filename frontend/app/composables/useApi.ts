@@ -5,7 +5,7 @@ async function req<T = any>(method: string, path: string, body?: any): Promise<T
   if (body) opts.body = JSON.stringify(body)
 
   const start = performance.now()
-  console.log(`%c[API] %c${method} %c${path}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc', body || '')
+  console.log(`%c[API] %c${method} %c${path}`, 'color:#888', 'color:#4fc3f7;font-weight:bold', 'color:#ccc', body ? { ...body, ...(body.api_key ? { api_key: '[REDACTED]' } : {}) } : '')
 
   try {
     const resp = await fetch(`${BASE}${path}`, opts)

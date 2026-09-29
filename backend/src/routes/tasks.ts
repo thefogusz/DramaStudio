@@ -7,6 +7,8 @@ import { getActiveConfig, getConfigById } from '../services/ai.js'
 import { getDramaStylePrompt } from '../services/style-preset.js'
 import { logTaskError, logTaskPayload, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
+import { FalVideoAdapter } from '../services/adapters/fal.js'
+
 const app = new Hono()
 
 type TaskType = 'image' | 'video'
@@ -140,6 +142,22 @@ app.post('/', async (c) => {
         : await getActiveConfig('video')
       const validationError = validateVideoRequest(videoBody, effectiveConfig?.provider)
       if (validationError) return badRequest(c, validationError)
+      if (effectiveConfig?.provider === 'fal') {
+        try {
+          if (!effectiveConfig.apiKey?.trim()) throw new Error('กรอก fal API Key ในหน้าตั้งค่าก่อน')
+          new FalVideoAdapter().buildGenerateRequest(effectiveConfig, {
+            id: 0, model: videoBody.model, prompt: videoBody.prompt,
+            duration: videoBody.duration, aspectRatio: videoBody.aspect_ratio,
+            resolution: episodeResolution || videoBody.resolution,
+            imageUrl: videoBody.image_url, firstFrameUrl: videoBody.first_frame_url,
+            lastFrameUrl: videoBody.last_frame_url,
+            referenceImageUrls: JSON.stringify(videoBody.reference_image_urls),
+            referenceVideoUrls: JSON.stringify(videoBody.reference_video_urls),
+            referenceAudioUrls: JSON.stringify(videoBody.reference_audio_urls),
+            referenceFileUrl: videoBody.file_url, referenceLinkUrl: videoBody.link_url,
+          })
+        } catch (e: any) { return badRequest(c, e.message) }
+      }
     }
 
     logTaskStart('TaskAPI', 'generate', {

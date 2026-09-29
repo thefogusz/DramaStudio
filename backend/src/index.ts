@@ -27,7 +27,7 @@ import { requestLogger, errorHandler } from './middleware/logger.js'
 import { db, schema } from './db/index.js'
 import { eq } from 'drizzle-orm'
 import { now } from './utils/response.js'
-import { DATA_ROOT } from './utils/paths.js'
+import { STORAGE_ROOT } from './utils/paths.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const projectRoot = path.resolve(__dirname, '../..')
@@ -78,10 +78,10 @@ app.use('/static/*', async (c, next) => {
   await next()
   if (c.res.ok) c.header('Cache-Control', 'public, max-age=31536000, immutable')
 })
-app.use('/static/*', serveStatic({ root: DATA_ROOT }))
+app.use('/static/*', serveStatic({ root: STORAGE_ROOT, rewriteRequestPath: requestPath => requestPath.replace(/^\/static/, '') }))
 
 // Serve frontend (production build) — 桌面版由主进程注入 FRONTEND_DIST（resources/frontend）
-const distPath = process.env.FRONTEND_DIST || path.join(projectRoot, 'frontend', 'dist')
+const distPath = process.env.FRONTEND_DIST || path.join(projectRoot, 'frontend', '.output', 'public')
 app.use('*', serveStatic({ root: distPath }))
 app.get('*', serveStatic({ root: distPath, path: 'index.html' }))
 

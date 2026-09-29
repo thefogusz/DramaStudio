@@ -271,7 +271,7 @@
       "desc": "Start with a recommended template, then fine-tune per service type. The workbench locks the chosen image and video capabilities when creating an episode.",
       "quickTitle": "fal video setup",
       "recommended": "Recommended",
-      "allowedDurations": "Set shot duration to {values} seconds before generation.", "modelSelectionHint": "Select models and save. Leave the key blank to reuse the saved key.", "selectModelRequired": "Select at least one video model.", "quickDesc": "Use one fal key and select video models. Codex creates scripts and images in chat.",
+      "videoSetupRequired": "Configure and enable a video provider before generating a clip.", "modelResolution": "Model determined", "allowedDurations": "Set shot duration to {values} seconds before generation.", "modelSelectionHint": "Select models and save. Leave the key blank to reuse the saved key.", "selectModelRequired": "Select at least one video model.", "quickDesc": "Use one fal key and select video models. Codex creates scripts and images in chat.",
       "getKey": "Get a key at fal.ai",
       "applyQuick": "Save fal Key",
       "manualTitle": "Manual Templates",

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import Database from 'better-sqlite3'
 import { initSqliteSchema } from '../src/db/sqlite-schema.js'
-import { STORAGE_ROOT } from '../src/utils/paths.js'
+import { DATA_ROOT, STORAGE_ROOT } from '../src/utils/paths.js'
 import { nativePackageSchema, validateNativePackage, bundleImagePath, importNativePackage, exportNativeContext, attachNativeImage } from '../src/services/codex-native.js'
 import sharp from 'sharp'
 
@@ -76,7 +76,7 @@ async function main() {
       return
     }
   }
-  const dbPath = values.db ? workspacePath(values.db) : path.resolve(process.env.SQLITE_PATH || path.join(repo, 'data', 'huobao.sqlite3'))
+  const dbPath = values.db ? workspacePath(values.db) : path.resolve(process.env.SQLITE_PATH || path.join(DATA_ROOT, 'huobao.sqlite3'))
   const storage = values.storage ? workspacePath(values.storage) : path.resolve(STORAGE_ROOT)
   // Read commands must not silently create a different empty database.
   const readonly = command === 'list' || command === 'export'

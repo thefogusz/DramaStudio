@@ -42,10 +42,11 @@
             v-model="videoModel"
             :label="t('common.serviceType.video')"
             :options="videoModelOptions"
-            :default-label="t('episode.model.defaultWith', { model: videoModelOptions[0].model })"
+            :default-label="t('episode.model.defaultWith', { model: configModels(selectedVideoConfig)[0] || videoModelOptions[0].model })"
             :show-config="videoModelMultiCfg"
           />
           <ModelSelect
+            v-if="!selectedFalModel || selectedFalModel.resolutions.length"
             v-model="episodeResolution"
             :label="t('episode.topbar.resolution')"
             :options="resolutionOptions"
@@ -798,7 +799,11 @@
                     <div class="video-param-row">
                       <span class="video-param-name">{{ t('episode.inspector.duration') }}</span>
                       <span class="video-param-control">
-                        <input
+                        <select v-if="selectedFalModel" :value="selectedSb.duration || 10" class="input video-duration-input" @change="onVideoDurationChange">
+                          <option v-if="!selectedFalModel.durations.includes(Number(selectedSb.duration || 10))" disabled :value="selectedSb.duration || 10">—</option>
+                          <option v-for="d in selectedFalModel.durations" :key="d" :value="d">{{ d }}</option>
+                        </select>
+                        <input v-else
                           :value="selectedSb.duration || 10"
                           type="number"
                           min="2"
@@ -2042,14 +2047,23 @@ const RESOLUTION_TIERS = {
 const RESOLUTION_DISPLAY = {
   volcengine: { '480p': '480p', '720p': '720p', '1080p': '720p' },
   minimax: { '480p': '768P', '720p': '768P', '1080p': '2K' },
-  fal: { '720p': '720p / H3: 768P', '1080p': '1080p' },
+  fal: { '720p': '720p', '1080p': '1080p' },
   aliyun: { '480p': '480P', '720p': '720P', '1080p': '1080P' },
 }
+const selectedFalModel = computed(() => {
+  if (selectedVideoConfig.value?.provider !== 'fal') return null
+  const model = bareModelName(videoModel.value) || selectedVideoConfig.value?.model?.[0]
+  return falModels.find(m => m.textModel === model || m.imageModel === model) || null
+})
 const resolutionProvider = computed(() => RESOLUTION_TIERS[selectedVideoConfig.value?.provider] ? selectedVideoConfig.value.provider : 'volcengine')
-const resolutionOptions = computed(() => RESOLUTION_TIERS[resolutionProvider.value].map(key => ({
+const resolutionOptions = computed(() => {
+  const info = selectedFalModel.value
+  const tiers = info?.family === 'h3' ? ['480p', '720p', '1080p'] : RESOLUTION_TIERS[resolutionProvider.value]
+  return tiers.map(key => ({
   key,
-  model: `${RESOLUTION_DISPLAY[resolutionProvider.value][key]} · ${t(`episode.resolution.${key === '480p' ? 'smooth' : key === '720p' ? 'hd' : 'uhd'}`)}`,
-})))
+  model: `${info?.family === 'h3' ? ({ '480p': '480P', '720p': '768P', '1080p': '1080P' }[key]) : RESOLUTION_DISPLAY[resolutionProvider.value][key]} · ${t(`episode.resolution.${key === '480p' ? 'smooth' : key === '720p' ? 'hd' : 'uhd'}`)}`,
+}))
+})
 const episodeResolution = computed({
   get: () => {
     const v = episode.value?.resolution
@@ -2058,7 +2072,7 @@ const episodeResolution = computed({
   set: (val) => { void changeEpisodeResolution(val) },
 })
 async function changeEpisodeResolution(val) {
-  if (!episode.value || val === episodeResolution.value) return
+  if (!episode.value || val === episode.value.resolution) return
   const prev = episode.value.resolution
   episode.value.resolution = val
   const label = resolutionOptions.value.find(o => o.key === val)?.model || val
@@ -2136,10 +2150,10 @@ const episodeResolutionLabel = computed(() =>
   resolutionOptions.value.find(o => o.key === episodeResolution.value)?.model || episodeResolution.value)
 // 短档位标签（480p / 768P / 2K 等厂商原生档位），用于底部生效配置小结
 const episodeResolutionShort = computed(() =>
-  RESOLUTION_DISPLAY[resolutionProvider.value][episodeResolution.value] || episodeResolution.value)
+  selectedFalModel.value?.resolutions.length === 0 ? t('settings.ai.modelResolution') : resolutionOptions.value.find(o => o.key === episodeResolution.value)?.model.split(' · ')[0] || episodeResolution.value)
 const effectiveVideoDuration = computed(() => Number(selectedSb.value?.duration || 10))
 const batchVideoTotalDuration = computed(() =>
-  batchVideoConfirm.value.targets.reduce((sum, sb) => sum + (Number(sb.duration) || 5), 0))
+  batchVideoConfirm.value.targets.reduce((sum, sb) => sum + (Number(sb.duration) || 10), 0))
 
 function openBatchVideoConfirm(pool) {
   const targets = pool.filter(s => !isPendingVideo(s.id))
@@ -3260,6 +3274,10 @@ function uploadAssetImage(kind, id) {
 }
 
 async function genVid(sb, opts = {}) {
+  if (!selectedVideoConfig.value) {
+    toast.error(t('settings.ai.videoSetupRequired'), { action: { label: t('settings.ai.quickTitle'), onClick: () => navigateTo('/settings') } })
+    return
+  }
   if (selectedVideoConfig.value?.provider === 'fal') {
     const model = bareModelName(videoModel.value) || selectedVideoConfig.value?.model?.[0]
     const info = falModels.find(m => m.textModel === model || m.imageModel === model)

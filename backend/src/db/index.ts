@@ -1,20 +1,16 @@
 import 'dotenv/config'
+import { DATA_ROOT } from '../utils/paths.js'
 import fs from 'fs'
 import path from 'path'
-import { fileURLToPath } from 'url'
 import Database from 'better-sqlite3'
 import { drizzle } from 'drizzle-orm/better-sqlite3'
 import * as schema from './schema.js'
 import { initSqliteSchema } from './sqlite-schema.js'
 import { maybeAutoImportMysql } from './mysql-import.js'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-// src/db → 上三级为仓库根（与 utils/paths.ts 的推断层级一致）
-const repoRoot = path.resolve(__dirname, '../../..')
-
 // 桌面版由 Electron 主进程注入 SQLITE_PATH（userData 下）；dev 默认仓库根 data/
 // 注意：勿沿用旧文件名 huobao_drama.db —— 那是早期 SQLite 时代的遗留库，表名重叠但列不同
-export const dbPath = process.env.SQLITE_PATH || path.join(repoRoot, 'data', 'huobao.sqlite3')
+export const dbPath = process.env.SQLITE_PATH || path.join(DATA_ROOT, 'huobao.sqlite3')
 fs.mkdirSync(path.dirname(dbPath), { recursive: true })
 
 const sqlite = new Database(dbPath)
