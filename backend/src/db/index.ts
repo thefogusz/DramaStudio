@@ -31,6 +31,11 @@ sqlite.prepare("UPDATE video_merges SET status='failed', error_msg=? WHERE model
 
 // MySQL 老用户一次性自动迁移：仅在显式配置 MySQL + 空库 + 无标记时触发（详见 mysql-import.ts 头注释）
 await maybeAutoImportMysql(sqlite, dbPath)
+// Keep historic providers/keys for old results, but only H3 reference generation remains active.
+sqlite.prepare("UPDATE ai_service_configs SET is_active=0 WHERE service_type='video' AND provider<>'fal'").run()
+sqlite.prepare("UPDATE ai_service_configs SET model=?,base_url=? WHERE service_type='video' AND provider='fal'").run('["minimax/h3-max/reference-to-video"]','https://queue.fal.run')
+sqlite.prepare("UPDATE episodes SET video_config_id=NULL WHERE video_config_id IN (SELECT id FROM ai_service_configs WHERE service_type='video' AND provider<>'fal')").run()
+
 
 /** better-sqlite3 的 lastInsertRowid 可能是 bigint，统一转 number */
 export function getInsertId(result: unknown) {

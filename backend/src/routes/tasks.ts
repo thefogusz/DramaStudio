@@ -87,7 +87,10 @@ function validateVideoRequest(body: any, provider?: string): string | null {
   const file = Boolean(body.file_url)
   const link = Boolean(body.link_url)
 
-  if ((provider || '').toLowerCase() === 'aliyun') {
+  if ((provider || '').toLowerCase() === 'fal') {
+    if(imgs>9 || vids>3 || auds>3 || imgs+vids+auds>12) return 'อ้างอิงได้สูงสุด 9 ภาพ, 3 วิดีโอ, 3 เสียง และรวมไม่เกิน 12 ไฟล์'
+    if(first||last||file||link) return 'H3 Reference to Video ไม่ใช้ช่องภาพเริ่มต้น/ภาพท้ายหรือไฟล์ทั่วไป'
+  } else if ((provider || '').toLowerCase() === 'aliyun') {
     if (imgs > 10 || vids > 5 || auds > 5) return 'Wan 3.0 参考素材超限：图片≤10、视频≤5、音频≤5'
     if (last && !first) return 'Wan 3.0 尾帧必须与首帧同时传入'
     if (file && link) return 'Wan 3.0 file 与 link 不能同时传入'

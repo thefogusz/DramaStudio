@@ -51,7 +51,7 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
     // Validate host/model without submitting a billable generation.
     if (baseUrl.replace(/\/$/, '') !== 'https://queue.fal.run' || !falModelInfo(m || FAL_VIDEO_MODEL)) throw new Error('Invalid fal config')
     return {
-      method: 'GET', url: 'https://queue.fal.run/fal-ai/kling-video/requests/00000000-0000-0000-0000-000000000000/status',
+      method: 'GET', url: 'https://queue.fal.run/minimax/h3-max/requests/00000000-0000-0000-0000-000000000000/status',
       headers: { Authorization: `Key ${apiKey || ''}` }, body: undefined,
     }
   }
@@ -133,7 +133,7 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
 app.get('/', async (c) => {
   const serviceType = c.req.query('service_type')
   let rows = await db.select().from(schema.aiServiceConfigs)
-  rows = rows.filter(r => r.serviceType !== 'text')
+  rows = rows.filter(r => r.serviceType !== 'text' && (r.serviceType !== 'video' || r.provider === 'fal'))
   if (serviceType) rows = rows.filter(r => r.serviceType === serviceType)
 
   const parsed = rows.map(withParsedFields)
@@ -151,7 +151,7 @@ app.post('/', async (c) => {
     return badRequest(c, '需要 service_type 与 provider')
   }
   if (!isOfficialProvider(body.service_type, body.provider)) {
-    return badRequest(c, '不支持的 service_type/provider')
+    return badRequest(c, 'งานวิดีโอรองรับเฉพาะ fal · MiniMax H3 Max Reference to Video')
   }
 
   let temperature: number | null = null
@@ -169,7 +169,7 @@ app.post('/', async (c) => {
     name: body.name || `${body.provider}-${body.service_type}`,
     baseUrl: body.base_url || '',
     apiKey: body.api_key || '',
-    model: JSON.stringify(body.model || []),
+    model: JSON.stringify(body.service_type === 'video' ? [FAL_VIDEO_MODEL] : body.model || []),
     priority: body.priority || 0,
     isActive: true,
     settings: temperature !== null ? JSON.stringify({ temperature }) : null,
@@ -191,7 +191,7 @@ app.post('/test', async (c) => {
     return badRequest(c, '需要 service_type、provider 与 base_url')
   }
   if (!isOfficialProvider(body.service_type, body.provider)) {
-    return badRequest(c, '不支持的 service_type/provider')
+    return badRequest(c, 'งานวิดีโอรองรับเฉพาะ fal · MiniMax H3 Max Reference to Video')
   }
 
   const model = Array.isArray(body.model) ? body.model[0] : body.model
@@ -281,7 +281,7 @@ app.put('/:id', async (c) => {
   if (serviceType === 'text') return badRequest(c, 'งานข้อความใช้ Codex ในเครื่อง ไม่ต้องตั้งค่า LLM API')
   const provider = 'provider' in body ? body.provider : existing.provider
   if (!isOfficialProvider(serviceType, provider)) {
-    return badRequest(c, '不支持的 service_type/provider')
+    return badRequest(c, 'งานวิดีโอรองรับเฉพาะ fal · MiniMax H3 Max Reference to Video')
   }
 
   const updates: Record<string, any> = { updatedAt: now() }
@@ -291,7 +291,8 @@ app.put('/:id', async (c) => {
   if ('name' in body) updates.name = body.name
   if ('base_url' in body) updates.baseUrl = body.base_url
   if ('api_key' in body) updates.apiKey = body.api_key
-  if ('model' in body) updates.model = JSON.stringify(body.model)
+  if (serviceType === 'video') updates.model = JSON.stringify([FAL_VIDEO_MODEL])
+  else if ('model' in body) updates.model = JSON.stringify(body.model)
   if ('priority' in body) updates.priority = body.priority
   if ('is_active' in body) updates.isActive = body.is_active
   if ('temperature' in body) {

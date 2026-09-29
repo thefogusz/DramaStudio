@@ -6,7 +6,7 @@ export function falModelInfo(model: string) {
   return models.find(item => item.textModel === model || item.imageModel === model)
 }
 
-export const FAL_VIDEO_MODEL = 'fal-ai/kling-video/v2.6/pro/text-to-video'
+export const FAL_VIDEO_MODEL = 'minimax/h3-max/reference-to-video'
 
 function queueUrl(raw: string): string {
   const url = new URL(raw)
@@ -84,39 +84,32 @@ export class FalVideoAdapter implements VideoProviderAdapter {
   provider = 'fal'
   resolvePollResult = fetchFalResult
   buildGenerateRequest(config: AIConfig, record: VideoGenerationRecord) {
-    let model = record.model || config.model || FAL_VIDEO_MODEL
+    const model = record.model || config.model || FAL_VIDEO_MODEL
     const info = falModelInfo(model)
-    if (!info) throw new Error('fal รองรับ Kling 2.6 Pro, Veo 3.1, Veo 3.1 Fast Wan 2.6 และ MiniMax H3 Max')
+    if (!info) throw new Error('ระบบรองรับเฉพาะ MiniMax H3 Max Reference to Video ผ่าน fal')
     const images = refs(record.referenceImageUrls)
-    const image = record.imageUrl || record.firstFrameUrl || images[0]
-    if (images.length > 1 || record.lastFrameUrl || refs(record.referenceVideoUrls).length || refs(record.referenceAudioUrls).length || record.referenceFileUrl || record.referenceLinkUrl) {
-      throw new Error(`${info.label} รองรับภาพเริ่มต้น 1 ภาพ ไม่มีภาพท้าย วิดีโอ หรือเสียงอ้างอิงในระบบนี้`)
-    }
-    if (image) model = info.imageModel
-    if (model === info.imageModel && !image) throw new Error(`${info.label} Image to Video ต้องมีภาพเริ่มต้น`)
-    const duration = record.duration ?? info.defaultDuration
-    if (!info.durations.includes(duration)) throw new Error(`${info.label} รองรับความยาว ${info.durations.join(', ')} วินาที`)
-    const ratio = record.aspectRatio || '16:9'
-    if (!info.ratios.includes(ratio)) throw new Error(`${info.label} รองรับสัดส่วน ${info.ratios.join(', ')}`)
-    const body: Record<string, unknown> = { prompt: record.prompt, duration: info.family === 'h3' ? duration : info.family === 'veo' ? `${duration}s` : String(duration) }
-    if (image) body.image_url = image
-    if (!image || info.family === 'veo') body.aspect_ratio = ratio
-    if (info.family === 'kling' || info.family === 'veo') body.generate_audio = record.generateAudio !== false && record.generateAudio !== 0
-    if (info.resolutions.length) {
-      const raw = record.resolution || '720p'
-      const resolution = info.family === 'h3' ? ({ '480p': '480P', '720p': '768P', '1080p': '1080P' }[raw] || raw) : raw
-      if (!info.resolutions.includes(resolution)) throw new Error(`${info.label} รองรับความละเอียด ${info.resolutions.join(', ')}`)
-      body.resolution = resolution
-    }
-    if (info.family === 'h3') body.prompt_expansion_mode = 'disabled'
-    if (info.family === 'wan') {
-      if ((record.prompt || '').length > 1500) throw new Error('Wan รองรับคำสั่งไม่เกิน 1500 ตัวอักษร')
-      body.multi_shots = false
-      body.enable_prompt_expansion = false
-    }
-    if (record.seed != null && info.family !== 'kling') body.seed = record.seed
-    return submit(config, model, body)
+    if(record.imageUrl && !images.includes(record.imageUrl)) images.unshift(record.imageUrl)
+    const videos = refs(record.referenceVideoUrls), audio = refs(record.referenceAudioUrls)
+    if(record.firstFrameUrl || record.lastFrameUrl || record.referenceFileUrl || record.referenceLinkUrl) throw new Error('Reference to Video ใช้ภาพอ้างอิง ไม่ใช้ช่องภาพเริ่มต้น/ภาพท้ายหรือไฟล์/ลิงก์ทั่วไป')
+    if(images.length>info.maxImages || videos.length>info.maxVideos || audio.length>info.maxAudio || images.length+videos.length+audio.length>info.maxReferences) throw new Error('อ้างอิงได้สูงสุด 9 ภาพ, 3 วิดีโอ, 3 เสียง และรวมไม่เกิน 12 ไฟล์')
+    if(!images.length && !videos.length && !audio.length) throw new Error('กรุณาเลือกภาพ วิดีโอ หรือเสียงอ้างอิงอย่างน้อย 1 ไฟล์')
+    const prompt = String(record.prompt || '').trim()
+    if(!prompt || prompt.length>info.maxPromptLength) throw new Error('คำสั่งสร้างวิดีโอต้องมีข้อความและไม่เกิน 50,000 ตัวอักษร')
+    const duration=record.duration ?? info.defaultDuration
+    if(!info.durations.includes(duration)) throw new Error('H3 Max รองรับความยาว 5–15 วินาที เป็นจำนวนเต็ม')
+    const ratio=record.aspectRatio || '9:16'
+    if(!info.ratios.includes(ratio)) throw new Error('สัดส่วนภาพไม่รองรับใน H3 Max')
+    const raw=record.resolution || '720p'
+    const resolution=({'480p':'480P','720p':'768P','1080p':'1080P'} as Record<string,string>)[raw] || raw
+    if(!info.resolutions.includes(resolution)) throw new Error('H3 Max รองรับความละเอียด 480P, 768P, 1080P')
+    const body: Record<string,unknown>={prompt,duration,resolution,aspect_ratio:ratio,prompt_expansion_mode:'disabled'}
+    if(images.length) body.reference_image_urls=images
+    if(videos.length) body.reference_video_urls=videos
+    if(audio.length) body.reference_audio_urls=audio
+    if(record.seed!=null) body.seed=record.seed
+    return submit(config,FAL_VIDEO_MODEL,body)
   }
+
   parseGenerateResponse = queued
   buildPollRequest(config: AIConfig, taskId: string) { return tracking(config, taskId, 'status') }
   parsePollResponse(result: any) {

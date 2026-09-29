@@ -14,7 +14,7 @@ test('settings save/key reuse → video API → fal request; invalid parameters 
   assert.equal(update.status, 200)
   const row = (await (await configs.request(`/${id}`)).json() as any).data
   assert.equal(row.api_key, 'audit-fake-key')
-  assert.equal(row.model[0], 'fal-ai/veo3.1')
+  assert.equal(row.model[0], 'minimax/h3-max/reference-to-video')
   const original = globalThis.fetch
   const requests: any[] = []
   globalThis.fetch = async (url, options) => {
@@ -23,8 +23,8 @@ test('settings save/key reuse → video API → fal request; invalid parameters 
     return new Response('audit stop', { status: 422 })
   }
   try {
-    const base = { type: 'video', config_id: id, model: row.model[0], prompt: 'camera pans', aspect_ratio: '9:16', resolution: '1080p', reference_image_urls: [] }
-    const bad = await tasks.request('/', { method: 'POST', headers: h, body: JSON.stringify({ ...base, duration: 10 }) })
+    const base = { type: 'video', config_id: id, model: row.model[0], prompt: 'camera pans', aspect_ratio: '9:16', resolution: '1080p', reference_image_urls: ['data:image/png;base64,AAAA','data:image/png;base64,BBBB','data:image/png;base64,CCCC'] }
+    const bad = await tasks.request('/', { method: 'POST', headers: h, body: JSON.stringify({ ...base, duration: 16 }) })
     assert.equal(bad.status, 400)
     assert.equal((await db.select().from(schema.sysTask)).length, 0)
     assert.equal(requests.length, 0)
@@ -32,10 +32,12 @@ test('settings save/key reuse → video API → fal request; invalid parameters 
     assert.equal(good.status, 201)
     for (let i = 0; i < 50 && !requests.length; i++) await new Promise(r => setTimeout(r, 10))
     assert.equal(requests.length, 1)
-    assert.equal(requests[0].url, 'https://queue.fal.run/fal-ai/veo3.1')
+    assert.equal(requests[0].url, 'https://queue.fal.run/minimax/h3-max/reference-to-video')
     const body = JSON.parse(requests[0].options.body)
-    assert.equal(body.duration, '8s')
-    assert.equal(body.resolution, '1080p')
+    assert.equal(body.duration, 8)
+    assert.deepEqual(body.reference_image_urls, base.reference_image_urls)
+    assert.equal(body.image_url, undefined)
+    assert.equal(body.resolution, '1080P')
     assert.equal(body.aspect_ratio, '9:16')
     assert.equal(requests[0].options.headers.Authorization, 'Key audit-fake-key')
     for (let i = 0; i < 50; i++) {

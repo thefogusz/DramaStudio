@@ -622,7 +622,7 @@
 
                   <section class="video-inspector-section">
                     <div class="video-inspector-prompt-head">
-                      <span class="video-inspector-label">{{ t('episode.ref.title') }}</span>
+                      <span class="video-inspector-label">{{ t('episode.ref.title') }} · H3 Max (สูงสุด 9 ภาพ)</span>
                       <span class="tag mono">{{ t('episode.ref.boundCount', { bound: refBindableAssets.filter(a => a.bound).length, total: refBindableAssets.length }) }}</span>
                     </div>
                     <div class="storyboard-ref-list is-embedded">
@@ -2136,7 +2136,7 @@ const isWan3Video = computed(() => selectedVideoConfig.value?.provider === 'aliy
   || bareModelName(videoModel.value).startsWith('wan3.0-video'))
 
 // 参考图上限（Wan 3.0 官方 10 张，其他模型 9 张），绑定素材收集与 @名字 映射统一读取
-const refImageLimit = computed(() => selectedVideoConfig.value?.provider === 'fal' ? 1 : isWan3Video.value ? 10 : 9)
+const refImageLimit = computed(() => selectedVideoConfig.value?.provider === 'fal' ? 9 : isWan3Video.value ? 10 : 9)
 
 // 本次生成的生效配置（模型/分辨率/时长），用于右侧小结与批量确认弹窗
 const effectiveVideoModelLabel = computed(() => {
@@ -3071,13 +3071,9 @@ function formatHistoryTime(iso) {
 }
 
 function getShotReferenceImages(sb) {
-  if (selectedVideoConfig.value?.provider === 'fal') {
-    const frame = sb.first_frame_image || sb.firstFrameImage || sb.composed_image || sb.composedImage
-    return frame ? [frame] : []
-  }
   const refs = []
   const pushRef = (value) => {
-    if (!value || refs.includes(value) || refs.length >= refImageLimit.value) return
+    if (!value || refs.includes(value)) return
     refs.push(value)
   }
   const scene = getStoryboardScene(sb)
@@ -3226,7 +3222,13 @@ function getShotReferenceIndexMap(sb) {
 
 // 将视频提示词里的 @名字 替换为 @图片N名字（N 为参考图序号，1 起），生成时使用
 function resolveVideoPromptRefs(sb) {
-  if (selectedVideoConfig.value?.provider === 'fal') return sb.video_prompt || sb.videoPrompt || ''
+  if (selectedVideoConfig.value?.provider === 'fal') {
+    const map=getShotReferenceIndexMap(sb)
+    let prompt=sb.video_prompt || sb.videoPrompt || ''
+    for(const name of Object.keys(map).sort((a,b)=>b.length-a.length)) prompt=prompt.split('@'+name).join(`Image ${map[name]} (${name})`)
+    prompt=prompt.replace(/MiniMax H3 Max Image-to-Video/g,'MiniMax H3 Max Reference-to-Video').replace(/ใช้เฟรมแรกที่เลือกเป็นฐาน/g,'ใช้ภาพอ้างอิงที่ระบุรักษารูปลักษณ์และฉาก')
+    return Object.keys(map).map(name=>`Image ${map[name]} = ${name}`).join('\n')+'\n'+prompt+'\nSpoken dialogue must remain exactly in Thai. Do not translate dialogue or add unscripted speech.'
+  }
   const prompt = sb.video_prompt || sb.videoPrompt || ''
   const map = getShotReferenceIndexMap(sb)
   const names = Object.keys(map).sort((a, b) => b.length - a.length)
@@ -3307,6 +3309,8 @@ async function genVid(sb, opts = {}) {
     }
   }
   const referenceImages = getShotReferenceImages(sb)
+  if(referenceImages.length > refImageLimit.value) {toast.error('เลือกภาพอ้างอิงได้สูงสุด 9 ภาพต่อช็อต กรุณาลดจำนวนภาพที่เลือก');return}
+  if(selectedVideoConfig.value?.provider==='fal' && !referenceImages.length) {toast.error('กรุณาเลือกตัวละคร ฉาก หรือสิ่งของที่มีภาพอ้างอิงก่อน');return}
   // 参考素材完全来自分镜绑定的角色/场景/道具图片
   const params = {
     storyboard_id: sb.id,
@@ -3413,7 +3417,7 @@ async function loadConfigs() {
       aiConfigAPI.list('text'),
     ])
     imageConfigs.value = imgCfgs || []
-    videoConfigs.value = vidCfgs || []
+    videoConfigs.value = (vidCfgs || []).filter(c=>c.provider==='fal')
     textConfigs.value = txtCfgs || []
   } catch (e) { console.error('Failed to load AI configs', e) }
 }

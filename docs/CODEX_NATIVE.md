@@ -188,3 +188,7 @@ Regression coverage is in `backend/tests/native-guard.test.ts`.
 Editor ปัจจุบันอ่าน metadata และคำบรรยาย ยังไม่ได้ฟังเสียง/ตรวจภาพเคลื่อนไหว จึงรักษาคลิปที่มีเสียงหรือบทพูดทั้งช่วง ไม่ตัดกลางคำ และแจ้งเมื่อไม่สามารถทำตามกรอบเวลาได้ ใช้ Codex native; rendering ใช้ FFmpeg ในเครื่อง ไม่มี LLM API เพิ่ม
 
 ตรวจ: backend `node --import tsx --test tests/production.test.ts tests/production-integration.test.ts`; opt-in native smoke เพิ่ม `TEST_NATIVE_PRODUCTION=1` ใน process environment. แบบระบบและขอบเขตใน docs/EPISODE_DIRECTOR_EDITOR_DESIGN.md
+
+## โมเดลวิดีโอปัจจุบัน
+
+ใช้ fal `minimax/h3-max/reference-to-video` เท่านั้น รายละเอียดขอบเขตภาพ/วิดีโอ/เสียงอ้างอิงและสถานะการทดสอบอยู่ใน [H3_REFERENCE_VIDEO.md](H3_REFERENCE_VIDEO.md) แนวทางโมเดลอื่นในประวัติเอกสารเป็นข้อมูลเก่า ไม่ใช่ตัวเลือกสร้างงานปัจจุบัน

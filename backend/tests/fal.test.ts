@@ -10,26 +10,33 @@ const queue = {
   response_url: 'https://queue.fal.run/fal-ai/kling-video/requests/test-job',
 }
 
-test('fal maps native prompts and one reference image to Kling endpoints', () => {
-  const text = adapter.buildGenerateRequest(config, { id: 1, prompt: 'ฝนตก', duration: 10, aspectRatio: '9:16', generateAudio: false })
-  assert.equal(text.url, `https://queue.fal.run/${FAL_VIDEO_MODEL}`)
-  assert.equal(text.headers.Authorization, 'Key fake-test-key')
-  assert.deepEqual(text.body, { prompt: 'ฝนตก', duration: '10', generate_audio: false, aspect_ratio: '9:16' })
-  const image = adapter.buildGenerateRequest(config, { id: 1, prompt: 'move', referenceImageUrls: JSON.stringify(['data:image/png;base64,AAAA']) })
-  assert.match(image.url, /image-to-video$/)
-  assert.equal(image.body.image_url, 'data:image/png;base64,AAAA')
-  assert.equal(image.body.aspect_ratio, undefined)
-  assert.throws(() => adapter.buildGenerateRequest(config, { id: 1, duration: 7 }), /5.*10/)
-  assert.throws(() => adapter.buildGenerateRequest(config, { id: 1, referenceImageUrls: '["one","two"]' }), /1 ภาพ/)
-  assert.throws(() => adapter.buildGenerateRequest(config, { id: 1, lastFrameUrl: 'last' }), /ภาพท้าย/)
-  assert.throws(() => adapter.buildGenerateRequest({ ...config, model: 'arbitrary/model' }, { id: 1 }), /Kling/)
+test('H3 reference inputs preserve order and enforce endpoint limits', () => {
+  const base = { id: 1, prompt: 'Image 1 speaks Thai', duration: 8, aspectRatio: '9:16', referenceImageUrls: JSON.stringify(['one','two','three']) }
+  const req = adapter.buildGenerateRequest(config, base)
+  assert.equal(req.url, `https://queue.fal.run/${FAL_VIDEO_MODEL}`)
+  assert.deepEqual(req.body.reference_image_urls, ['one','two','three'])
+  assert.equal(req.body.duration, 8)
+  assert.equal(req.body.prompt_expansion_mode, 'disabled')
+  assert.equal(req.body.image_url, undefined)
+  assert.equal(req.body.generate_audio, undefined)
+  assert.equal(FAL_VIDEO_MODELS.length, 1)
+  assert.throws(() => adapter.buildGenerateRequest(config, {...base, duration:16}), /5–15/)
+  assert.throws(() => adapter.buildGenerateRequest(config, {...base, referenceImageUrls: JSON.stringify(Array(10).fill('one'))}), /9 ภาพ/)
+  assert.throws(() => adapter.buildGenerateRequest(config, {...base, referenceImageUrls: JSON.stringify(Array(9).fill('one')), referenceVideoUrls:'["v1","v2","v3"]', referenceAudioUrls:'["a1"]'}), /12 ไฟล์/)
+  assert.throws(() => adapter.buildGenerateRequest(config, {...base, firstFrameUrl:'first'}), /ภาพเริ่มต้น/)
+  assert.throws(() => adapter.buildGenerateRequest({...config, model:'minimax/h3-max/image-to-video'}, base), /รองรับเฉพาะ/)
+  const mixed = adapter.buildGenerateRequest(config, {...base, referenceImageUrls:JSON.stringify(Array(9).fill('image')), referenceVideoUrls:'["v1","v2"]', referenceAudioUrls:'["a1"]'})
+  assert.deepEqual(mixed.body.reference_video_urls, ['v1','v2'])
+  assert.deepEqual(mixed.body.reference_audio_urls, ['a1'])
+  const audio = adapter.buildGenerateRequest(config, {id:1, prompt:'Audio 1', referenceAudioUrls:'["audio"]'})
+  assert.deepEqual(audio.body.reference_audio_urls, ['audio'])
 })
 
 test('fal persists authoritative queue URLs and rejects credential redirects', async () => {
   const taskId = adapter.parseGenerateResponse(queue).taskId!
   assert.equal(adapter.buildPollRequest(config, taskId).url, queue.status_url)
   assert.throws(() => adapter.parseGenerateResponse({ ...queue, response_url: 'https://evil.example/result' }), /queue.fal.run/)
-  assert.throws(() => adapter.buildGenerateRequest({ ...config, baseUrl: 'https://evil.example' }, { id: 1 }), /queue.fal.run/)
+  assert.throws(() => adapter.buildGenerateRequest({ ...config, baseUrl: 'https://evil.example' }, { id: 1, prompt:'shot', referenceImageUrls:'["one"]' }), /queue.fal.run/)
   assert.throws(() => adapter.parseGenerateResponse({ request_id: 'missing-urls' }), /URL/)
   assert.equal(adapter.parsePollResponse({ status: 'IN_QUEUE' }).status, 'pending')
   assert.equal(adapter.parsePollResponse({ status: 'IN_PROGRESS' }).status, 'processing')
@@ -75,29 +82,4 @@ test('fal config supports videos only and connection test submits no generation'
     assert.equal(data.ok, false)
     assert.equal(data.reachable, true)
   } finally { globalThis.fetch = originalFetch }
-})
-
-
-test('every selectable fal family maps text/image requests and native parameters', () => {
-  for (const info of FAL_VIDEO_MODELS) {
-    const req = adapter.buildGenerateRequest({ ...config, model: info.textModel }, { id: 1, prompt: 'shot', duration: info.defaultDuration, resolution: '720p' })
-    assert.equal(req.url, `https://queue.fal.run/${info.textModel}`)
-    const img = adapter.buildGenerateRequest({ ...config, model: info.textModel }, { id: 1, prompt: 'shot', duration: info.defaultDuration, resolution: '1080p', firstFrameUrl: 'data:image/png;base64,AAAA' })
-    assert.equal(img.url, `https://queue.fal.run/${info.imageModel}`)
-    assert.equal(img.body.image_url, 'data:image/png;base64,AAAA')
-    assert.throws(() => adapter.buildGenerateRequest({ ...config, model: info.textModel }, { id: 1, duration: 99 }), /วินาที/)
-    if (info.family === 'h3') {
-      assert.equal(req.body.duration, 5)
-      assert.equal(req.body.resolution, '768P')
-      assert.equal(img.body.resolution, '1080P')
-      assert.equal(req.body.prompt_expansion_mode, 'disabled')
-      assert.equal(req.body.generate_audio, undefined)
-      assert.equal(img.body.aspect_ratio, undefined)
-    }
-    if (info.family === 'veo') assert.equal(req.body.duration, '8s')
-    if (info.family === 'wan') {
-      assert.equal(req.body.generate_audio, undefined)
-      assert.equal(req.body.multi_shots, false)
-    }
-  }
 })

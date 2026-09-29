@@ -512,7 +512,7 @@ async function normalizeVideoReferenceUrl(value: string | null | undefined): Pro
       })
     } catch (err) {
       logTaskWarn('VideoTask', 'reference-read-failed', { path: localPath, error: (err as Error).message })
-      return null
+      throw new Error('อ่านภาพอ้างอิงไม่ได้ กรุณาอัปโหลดภาพใหม่ก่อนสร้างวิดีโอ')
     }
   }
   return raw

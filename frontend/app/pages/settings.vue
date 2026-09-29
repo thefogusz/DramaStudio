@@ -109,9 +109,9 @@
               </button>
             </div>
             <div class="huobao-quick-models">
-              <p>{{ t('settings.ai.modelSelectionHint') }}</p>
+              <p>ใช้ MiniMax H3 Max Reference to Video สำหรับทุกงานวิดีโอ · ภาพอ้างอิงสูงสุด 9 ภาพ</p>
               <label v-for="m in falModels" :key="m.id" class="hqm-row">
-                <input v-model="falEnabled" type="checkbox" :value="m.id" />
+                <input type="checkbox" checked disabled />
                 <strong>{{ m.label }}</strong><span>{{ m.durations.join(', ') }}s</span>
               </label>
               <label>{{ t('settings.ai.currentDefault') }}
@@ -751,7 +751,7 @@ function pinModelTop(i) {
 const serviceTypes = computed(() => [
   { type: 'video', label: t('common.serviceType.video') },
 ])
-const providers = ['gemini', 'openai', 'volcengine', 'minimax', 'aliyun', 'fal']
+const providers = ['fal']
 const providerSelectOptions = computed(() => providers.filter(p => p !== 'fal' || cfgForm.service_type === 'video').map(p => ({ label: p, value: p })))
 const serviceMeta = computed(() => ({
   text: { label: t('common.serviceType.text'), desc: t('settings.ai.meta.text') },
@@ -768,14 +768,11 @@ const providerPresets = {
     openai: { label: 'OpenAI', baseUrl: 'https://api.openai.com', models: ['gpt-image-2'] },
   },
   video: {
-    fal: { label: 'fal · Kling 2.6 Pro', baseUrl: 'https://queue.fal.run', models: ['fal-ai/kling-video/v2.6/pro/text-to-video', 'fal-ai/kling-video/v2.6/pro/image-to-video'] },
-    aliyun: { label: 'Alibaba Cloud · Wan 3.0', baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
-    volcengine: { label: 'Seedance 2.0', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
-    minimax: { label: 'MiniMax H3', baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
+    fal: { label: 'fal · MiniMax H3 Max Reference to Video', baseUrl: 'https://queue.fal.run', models: ['minimax/h3-max/reference-to-video'] },
   },
 }
-const falEnabled = ref(['kling'])
-const falDefault = ref('kling')
+const falEnabled = ref(['h3-max'])
+const falDefault = ref('h3-max')
 const savedFal = computed(() => [...cfgs.value].filter(c => c.provider === 'fal' && c.service_type === 'video' && c.base_url?.replace(/\/$/, '') === 'https://queue.fal.run').sort((a,b) => (b.priority || 0) - (a.priority || 0))[0])
 watch(falEnabled, ids => { if (!ids.includes(falDefault.value)) falDefault.value = ids[0] || '' })
 
@@ -797,7 +794,7 @@ function applyProviderPreset(type, provider) {
   cfgForm.name = `${preset.label}-${type}`
 }
 
-async function loadCfgs() { try { cfgs.value = await aiConfigAPI.list(); if (savedFal.value) { const ms = savedFal.value.model || []; falEnabled.value = falModels.filter(m => ms.includes(m.textModel) || ms.includes(m.imageModel)).map(m => m.id); falDefault.value = falModels.find(m => m.textModel === ms[0] || m.imageModel === ms[0])?.id || falEnabled.value[0] || '' } } catch (e) { toastError(e) } }
+async function loadCfgs() { try { cfgs.value = (await aiConfigAPI.list()).filter(c=>c.service_type!=='video'||c.provider==='fal'); if (savedFal.value) { const ms = savedFal.value.model || []; falEnabled.value = falModels.filter(m => ms.includes(m.textModel) || ms.includes(m.imageModel)).map(m => m.id); falDefault.value = falModels.find(m => m.textModel === ms[0] || m.imageModel === ms[0])?.id || falEnabled.value[0] || '' } } catch (e) { toastError(e) } }
 
 // ===== 默认模型选择 =====
 // 默认解析规则与工作台/后端一致：启用配置中优先级最高者的模型列表首位
@@ -838,10 +835,10 @@ async function applyFalQuickConfig() {
   if (!apiKey && !savedFal.value?.api_key) { toast.warning(t('settings.ai.apiKeyRequired')); return }
   falSaving.value = true
   try {
-    const selected = falModels.filter(m => falEnabled.value.includes(m.id))
+    const selected = [...falModels]
     if (!selected.length) { toast.warning(t('settings.ai.selectModelRequired')); return }
     selected.sort((a,b) => Number(b.id === falDefault.value) - Number(a.id === falDefault.value))
-    const payload = { service_type: 'video', provider: 'fal', name: 'fal · Video', base_url: 'https://queue.fal.run', model: selected.flatMap(m => [m.textModel, m.imageModel]), priority: Math.max(0, ...cfgs.value.filter(c => c.service_type === 'video').map(c => c.priority || 0)) + 1, ...(apiKey ? { api_key: apiKey } : {}) }
+    const payload = { service_type: 'video', provider: 'fal', name: 'fal · MiniMax H3 Max Reference to Video', base_url: 'https://queue.fal.run', model: [...new Set(selected.flatMap(m => [m.textModel, m.imageModel]))], priority: Math.max(0, ...cfgs.value.filter(c => c.service_type === 'video').map(c => c.priority || 0)) + 1, ...(apiKey ? { api_key: apiKey } : {}) }
     if (savedFal.value) await aiConfigAPI.update(savedFal.value.id, { ...payload, is_active: true })
     else await aiConfigAPI.create(payload)
     toast.success(t('settings.ai.quickApplied'))
@@ -894,7 +891,7 @@ async function testDraftCfg() {
     provider: cfgForm.provider,
     api_key: cfgForm.api_key,
     base_url: cfgForm.base_url,
-    model: [...cfgForm.models],
+    model: cfgForm.service_type==='video' ? ['minimax/h3-max/reference-to-video'] : [...cfgForm.models],
   })
 }
 async function testExistingCfg(c) {
