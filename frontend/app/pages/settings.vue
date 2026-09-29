@@ -79,7 +79,13 @@
             <p class="settings-desc">{{ t('settings.ai.desc') }}</p>
           </div>
           <section class="card setup-panel">
-            <h3>{{ t('nativeCodex.title') }}</h3>
+            <div class="native-connection-heading">
+              <h3>{{ t('nativeCodex.title') }}</h3>
+              <span v-if="!nativeChecking && nativeStatus?.available && nativeStatus?.authenticated" class="native-connected-badge" role="status">
+                <span class="native-connected-dot" aria-hidden="true"></span>เชื่อมต่อแล้ว
+              </span>
+              <span v-else-if="nativeChecking" class="tag">กำลังตรวจสอบ…</span>
+            </div>
             <p>{{ t('nativeCodex.description') }}</p>
             <p role="status" aria-live="polite">{{ nativeChecking ? t('nativeCodex.checking') : nativeStatus?.available && nativeStatus?.authenticated ? 'เชื่อมต่อแล้ว · Codex CLI พร้อมใช้และเข้าสู่ระบบ ChatGPT แล้ว' : nativeStatus?.message || t('nativeCodex.checking') }}</p>
             <p v-if="nativeCheckedAt" class="dim">{{ t('nativeCodex.checkedAt', { time: nativeCheckedAt }) }}</p>
@@ -1431,6 +1437,11 @@ onBeforeUnmount(stopUsagePoll)
 </script>
 
 <style scoped>
+.native-connection-heading { display:flex; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:8px; }
+.native-connection-heading h3 { margin:0; }
+.native-connected-badge { display:inline-flex; align-items:center; gap:8px; padding:6px 12px; border:1px solid #34865a; border-radius:999px; background:#133a29; color:#9aefbc; font-size:13px; font-weight:700; }
+.native-connected-dot { width:8px; height:8px; border-radius:50%; background:#65df94; box-shadow:0 0 0 3px rgb(101 223 148 / 12%); }
+
 .settings-page { display: flex; flex-direction: column; height: 100%; background: var(--bg-base); }
 
 .settings-layout { display: flex; flex: 1; min-height: 0; }
