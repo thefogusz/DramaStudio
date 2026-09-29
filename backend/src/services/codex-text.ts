@@ -44,7 +44,7 @@ export function cli(args: string[], input = '', signal?: AbortSignal, timeoutMs 
 }
 
 export async function codexStatus() {
-  try { const login = await cli(['login', 'status']); return { ...codexQueueStatus(), available: true, authenticated: /ChatGPT/i.test(login), message: /ChatGPT/i.test(login) ? codexQueueStatus().message : 'กรุณาเข้าสู่ระบบ Codex ด้วยบัญชี ChatGPT' } }
+  try { const login = await cli(['login', 'status'], '', undefined, 10_000); return { ...codexQueueStatus(), available: true, authenticated: /ChatGPT/i.test(login), message: /ChatGPT/i.test(login) ? codexQueueStatus().message : 'กรุณาเข้าสู่ระบบ Codex ด้วยบัญชี ChatGPT' } }
   catch { return { ...codexQueueStatus(), available: false, authenticated: false, message: 'ไม่พบ Codex CLI หรือเปิดไม่ได้' } }
 }
 

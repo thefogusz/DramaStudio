@@ -1241,14 +1241,22 @@ async function checkNativeCodex(notify = false) {
   if (nativeChecking.value) return
   nativeChecking.value = true
   try {
-    nativeStatus.value = await api.get('/agent/native/status')
+    nativeStatus.value = await api.get('/agent/native/status', AbortSignal.timeout(15_000))
     nativeCheckedAt.value = new Date().toLocaleTimeString(locale.value)
     if (notify) {
       if (nativeStatus.value.available && nativeStatus.value.authenticated) toast.success(t('nativeCodex.connected'))
       else toast.error(nativeStatus.value.message)
     }
   }
-  catch (error) { nativeStatus.value = { available: false, authenticated: false, message: t('nativeCodex.checkFailed') }; toastError(error) }
+  catch (error) {
+    const timedOut = ['TimeoutError', 'AbortError'].includes(error?.name)
+    const message = timedOut
+      ? 'ตรวจสถานะหมดเวลา กรุณาตรวจว่า Backend และ Codex CLI ยังทำงานอยู่ แล้วกดตรวจอีกครั้ง'
+      : 'ติดต่อ Backend เพื่อตรวจ Codex ไม่ได้ กรุณาเปิด Backend ของแอป แล้วกดตรวจอีกครั้ง ยังสรุปไม่ได้ว่า Codex เชื่อมต่อหรือไม่'
+    nativeStatus.value = { available: false, authenticated: false, message }
+    nativeCheckedAt.value = new Date().toLocaleTimeString(locale.value)
+    if (notify) toast.error(message)
+  }
   finally { nativeChecking.value = false }
 }
 onMounted(() => { checkNativeCodex(); loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets() })
