@@ -85,7 +85,12 @@ async function render(draft:boolean) {
  catch(e:any){error.value=e.message}finally{working.value=false}
 }
 watch(()=>props.episodeId,()=>{saved.value=null;data.value=null;error.value='';status.value='';load()},{immediate:true})
-defineExpose({load})
+function requireSaved(checkTiming=false) {
+ if(dirty.value) {error.value='กรุณาบันทึกกรอบเวลาก่อน ค่าที่กรอกยังไม่ได้ส่งให้ Codex';expanded.value=true;return error.value}
+ if(checkTiming && data.value?.timing?.configured && !data.value.timing.ok) {error.value=`แผนช็อตรวม ${data.value.timing.seconds} วินาที ${data.value.timing.message} กรุณาปรับบทและแบ่งช็อตใหม่ก่อนสร้างวิดีโอ`;expanded.value=true;return error.value}
+ return ''
+}
+defineExpose({load,requireSaved})
 </script>
 <style scoped>
 .production-brief{flex-shrink:0;border-bottom:1px solid var(--border);background:var(--bg-1);font-size:12px}

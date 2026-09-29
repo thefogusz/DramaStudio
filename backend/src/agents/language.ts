@@ -21,11 +21,12 @@ export function buildLanguageDirective(lang?: string | null): string {
   return [
     '## Output Language (HIGHEST PRIORITY)',
     '',
-    `ALL user-facing content you produce (scripts, dialogue, extracted fields, storyboard descriptions, atmosphere, image prompts, video prompts, asset names for NEW assets) MUST be written in ${native}.`,
+    `ALL user-facing content you produce (scripts, dialogue, extracted fields, storyboard descriptions, atmosphere, image prompts, asset names for NEW assets) MUST be written in ${native}.`,
     '',
     'This instruction has the highest priority and OVERRIDES any conflicting language requirement anywhere else in these instructions or skills — including requirements such as "output must be pure Chinese / 只输出中文". Ignore those.',
     '',
     'Exceptions:',
+    '- video_prompt is a model instruction: write camera, action, atmosphere, timing and audio directions in English. Preserve original dialogue verbatim only inside <d>[Thai] …</d> (or its actual language tag); keep existing @asset names unchanged. Never translate dialogue.',
     '- When referencing EXISTING assets with @mentions (e.g. in video prompts), the name after @ must EXACTLY match the asset name as it appears in the provided asset lists — do NOT translate or rewrite existing asset names.',
     '- The visual style prefix of image prompts is injected automatically by the system (in English). Do not translate, rewrite, or duplicate it.',
   ].join('\n')

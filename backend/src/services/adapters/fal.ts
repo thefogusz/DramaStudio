@@ -1,3 +1,4 @@
+import { protectVideoSpeech } from '../h3-video-prompt.js'
 import type { AIConfig, ProviderRequest, VideoProviderAdapter, VideoGenerationRecord } from './types'
 import models from '../../../../shared/fal-video-models.json'
 
@@ -102,7 +103,7 @@ export class FalVideoAdapter implements VideoProviderAdapter {
     const raw=record.resolution || '720p'
     const resolution=({'480p':'480P','720p':'768P','1080p':'1080P'} as Record<string,string>)[raw] || raw
     if(!info.resolutions.includes(resolution)) throw new Error('H3 Max รองรับความละเอียด 480P, 768P, 1080P')
-    const body: Record<string,unknown>={prompt,duration,resolution,aspect_ratio:ratio,prompt_expansion_mode:'disabled'}
+    const body: Record<string,unknown>={prompt:protectVideoSpeech(prompt),duration,resolution,aspect_ratio:ratio,prompt_expansion_mode:'disabled'}
     if(images.length) body.reference_image_urls=images
     if(videos.length) body.reference_video_urls=videos
     if(audio.length) body.reference_audio_urls=audio

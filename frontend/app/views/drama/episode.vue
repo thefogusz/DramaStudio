@@ -2155,6 +2155,7 @@ const batchVideoTotalDuration = computed(() =>
   batchVideoConfirm.value.targets.reduce((sum, sb) => sum + (Number(sb.duration) || 10), 0))
 
 function openBatchVideoConfirm(pool) {
+  if (!checkProductionReady(true)) return
   const targets = pool.filter(s => !isPendingVideo(s.id))
   if (!targets.length) { toast.info(t('episode.vid.noneToGenerate')); return }
   batchVideoConfirm.value = { open: true, targets }
@@ -2171,6 +2172,7 @@ function retryFailedVideos() {
   openBatchVideoConfirm(sbs.value.filter(s => videoTaskState(s) === 'failed'))
 }
 function confirmBatchVideos() {
+  if (!checkProductionReady(true)) return
   const targets = [...batchVideoConfirm.value.targets]
   batchVideoConfirm.value = { open: false, targets: [] }
   if (!targets.length) return
@@ -2680,7 +2682,7 @@ async function saveScr() {
 }
 // 发给 Agent 的 message 是功能性提示词而非 UI 文案：产出语言由后端全局「内容语言」指令控制，
 // 这里保持中文不随界面语言变化
-async function doRewrite() { if (productionAgentBusy.value) return; if (await saveRaw()) await runAgent('script_rewriter', '请读取剧本并改写为格式化剧本，然后保存', dramaId, epId.value, refresh, chatModelOverride(), chatConfigId()) }
+async function doRewrite() { if (!checkProductionReady()) return; if (productionAgentBusy.value) return; if (await saveRaw()) await runAgent('script_rewriter', '请读取剧本并改写为格式化剧本，然后保存', dramaId, epId.value, refresh, chatModelOverride(), chatConfigId()) }
 async function skipRewrite() {
   const raw = (localRaw.value || rawContent.value || '').trim()
   if (!raw) {
@@ -2820,7 +2822,13 @@ function pollVideoPromptBatch(attempts = 240) {
   }
   setTimeout(() => tick(attempts), 2500)
 }
+function checkProductionReady(checkTiming = false) {
+  const message = productionBriefPanel.value?.requireSaved(checkTiming)
+  if (message) { toast.error(message); return false }
+  return true
+}
 function doBreakdown() {
+  if (!checkProductionReady()) return
   if (productionAgentBusy.value) return
   const charList = chars.value.length
     ? chars.value.map(c => `${c.name}(ID:${c.id})`).join('、')
@@ -2865,11 +2873,7 @@ async function genVideoPrompt(sb) {
   videoPromptGeneratingIds.value.push(sb.id)
   try {
     await api.post(`/agent/prompt_generator/chat`, {
-      message: `请为分镜 #${idx}(ID:${sb.id})生成视频提示词(video_prompt)。视频模型:${label},请根据该模型的特性和时长限制生成。
-
-该分镜信息:时长 ${sb.duration || 10}s;场景:${getSceneName(sb) || '未绑定'};角色:${charNames};道具:${propNames}。
-
-请先调用 read_storyboard_context 获取该分镜的画面描述(含【镜头N】子镜头与台词/旁白)、氛围及时长,据此生成 video_prompt(按 3 秒分段换行、用 @角色名/@场景名/@道具名 引用参考素材；段落内允许多镜头切镜,但不跨场景,切镜点对齐 description 的【镜头N】结构),然后调用 update_storyboard 保存到分镜 ID:${sb.id}。只更新 video_prompt 字段,不要改动其他字段,不要重新拆分整集。`,
+      message: `Rewrite video_prompt for storyboard ID ${sb.id}, duration ${sb.duration || 10}s, using the mandatory H3 six-section contract. Read read_storyboard_context. Write camera/action/audio instructions in English; preserve exact original Thai dialogue ONLY in <d>[Thai] …</d>. Assign each speaker and speech time window. Keep @asset names unchanged. Save only storyboard_id and video_prompt with update_storyboard, without changing other fields. Model: ${label}.`,
       drama_id: dramaId,
       episode_id: epId.value,
       model: chatModelOverride() || undefined,
@@ -3303,6 +3307,7 @@ function uploadAssetImage(kind, id) {
 }
 
 async function genVid(sb, opts = {}) {
+  if (!checkProductionReady(true)) return
   if (!selectedVideoConfig.value) {
     toast.error(t('settings.ai.videoSetupRequired'), { action: { label: t('settings.ai.quickTitle'), onClick: () => navigateTo('/settings') } })
     return

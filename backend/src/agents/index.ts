@@ -1,3 +1,4 @@
+import { H3_VIDEO_PROMPT_DIRECTIVE } from '../services/h3-video-prompt.js'
 /**
  * Mastra Agent 注册表
  * 启动时注册静态 Agent；instructions/model 用 DynamicArgument 按请求解析
@@ -178,7 +179,8 @@ export async function resolveAgentInstructions(type: string, lang?: string | nul
     const baseInstructions = promptFile?.instructions || defaults.instructions
     const skillInstructions = await loadAgentSkills(type, lang)
     const languageDirective = buildLanguageDirective(lang)
-    return [baseInstructions, skillInstructions, languageDirective]
+    const timingDirective = type === 'storyboard_breaker' ? `Mandatory timing rules override all generic duration formulas in prompts and skills: read the saved production_brief before planning. H3 reference-to-video supports integer durations 5 through 15 seconds; 12 seconds is NOT a minimum. Choose the shortest duration that fits the actual dialogue, actions and pauses. Do not pad every shot to 12 seconds. The sum of ALL shot durations must fit the saved episode budget. For a 30-second episode, at most six separate 5-second generation tasks fit; combine sub-shots into one task where appropriate. If the script cannot fit, explain the conflict and request an authorized script revision instead of saving an overlong plan. A 2-second insert can be an internal timed sub-shot of a longer task; do not promise automatic trimming. Use exact timestamps covering each task duration, not forced multiples of 3 seconds. Never override a saved time budget using script character count.` : ''
+    return [baseInstructions, skillInstructions, languageDirective, timingDirective, ['storyboard_breaker','prompt_generator'].includes(type) ? H3_VIDEO_PROMPT_DIRECTIVE : '']
       .filter(Boolean)
       .join('\n\n')
 }

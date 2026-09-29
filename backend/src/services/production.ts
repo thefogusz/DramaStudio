@@ -119,3 +119,12 @@ export function checkShotDuration(episodeId:number,duration:number,shotId?:numbe
  const timing=timingCheck(snapshot.brief,total)
  if(snapshot.brief&&timing.max!=null&&total>timing.max) throw new Error('เวลาช็อตรวมเกินกรอบเวลาตอน กรุณาปรับแผน')
 }
+
+/** Reject over-budget episodes before any paid generation task is created. */
+export function checkVideoProductionTiming(storyboardId:number,duration?:number) {
+ const shot = sql.prepare('SELECT episode_id,duration FROM storyboards WHERE id=? AND deleted_at IS NULL').get(storyboardId) as any
+ if(!shot) throw new Error('ไม่พบช็อตสำหรับสร้างวิดีโอ')
+ if(duration!=null && Number(duration)!==Number(shot.duration)) throw new Error('ความยาวที่ขอสร้างไม่ตรงกับแผนช็อต กรุณาบันทึกความยาวช็อตและตรวจกรอบเวลาก่อน')
+ const timing=timingStatus(shot.episode_id)
+ if(timing.configured&&!timing.ok) throw new Error(`แผนช็อตรวม ${timing.seconds} วินาที ${timing.message} กรุณาปรับบทและแบ่งช็อตใหม่ก่อนสร้างวิดีโอ`)
+}
