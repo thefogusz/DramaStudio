@@ -81,3 +81,8 @@ Dialogue that does not fit must be moved to the next segment; cramming unperform
 - `image_prompt` should highlight the single-frame composition, character appearance, environment, and lighting (corresponding to the segment's first sub-shot)
 - `bgm_prompt` and `sound_effect` may be concise phrases, but must not be as vague as just "tense" or "sad"
 - To make adjustments, call `update_storyboard` to modify the specific segment
+
+
+## Creative scope and reference budget
+
+The H3 reference budget is at most 9 unique image inputs per generated shot, shared freely among characters, scene and props. It is not a story-wide cast or prop limit and is not a quota per category. Support ensemble casts and prop-heavy stories whenever the idea needs them. Do not rewrite every story around two characters, one scene and one prop for convenience. Keep all narratively necessary characters and props in the episode inventory. If a shot needs more reference images than the provider accepts, propose justified coverage shots or a deliberate reference selection and explain which subjects lack a reference; never silently omit story participants or images. A shot currently has one primary scene binding; represent location changes as coverage shots when narratively appropriate.

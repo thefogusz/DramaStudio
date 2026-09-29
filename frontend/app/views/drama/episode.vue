@@ -623,8 +623,9 @@
                   <section class="video-inspector-section">
                     <div class="video-inspector-prompt-head">
                       <span class="video-inspector-label">{{ t('episode.ref.title') }} · H3 Max (สูงสุด 9 ภาพ)</span>
-                      <span class="tag mono">{{ t('episode.ref.boundCount', { bound: refBindableAssets.filter(a => a.bound).length, total: refBindableAssets.length }) }}</span>
+                      <span class="tag mono">ภาพที่ส่ง {{ selectedSb ? getShotReferenceImages(selectedSb).length : 0 }}/9</span>
                     </div>
+                    <p class="text-muted">เลือกภาพรวมทุกประเภทได้ 9 ภาพต่อช็อต แบ่งสัดส่วนตัวละคร ฉาก และสิ่งของได้ตามเรื่อง ไม่จำกัดจำนวนทรัพยากรทั้งตอน</p>
                     <div class="storyboard-ref-list is-embedded">
                       <template v-for="g in REF_KINDS" :key="g.kind">
                         <div v-if="refBindableAssets.filter(a => a.kind === g.kind).length" class="storyboard-ref-group">
@@ -3155,6 +3156,15 @@ const REF_KINDS = computed(() => ([
 
 // 右侧面板切换绑定：场景单选（切换/解绑），角色/道具多选（kind code 判断，不依赖显示文案）
 function toggleShotBind(sb, asset) {
+  // Count the actual unique image inputs, without quotas for any asset category.
+  if (!asset.bound && asset.imageUrl) {
+    const selected = shotBindableAssets(sb).filter(a => a.bound && a.imageUrl && !(asset.kind === 'scene' && a.kind === 'scene'))
+    const images = new Set([...selected.map(a => a.imageUrl), asset.imageUrl])
+    if (images.size > refImageLimit.value) {
+      toast.error('เลือกภาพอ้างอิงครบ 9 ภาพแล้ว กรุณาเอาภาพเดิมออกก่อนเพิ่มภาพใหม่ ตัวละครและสิ่งของในเรื่องยังเพิ่มได้ตามต้องการ')
+      return
+    }
+  }
   if (asset.kind === 'scene') {
     const current = sb?.scene_id || sb?.sceneId
     updateField(sb, 'scene_id', current === asset.id ? null : asset.id)
@@ -3200,12 +3210,11 @@ const mentionOptions = computed(() => {
 
 // 按参考图顺序（场景图在前、角色图居中、道具图在后）为 @名字 建立索引映射，供视频提示词引用替换
 function getShotReferenceIndexMap(sb) {
-  const ordered = []
-  const seen = new Set()
+  const urls = getShotReferenceImages(sb)
+  const nameToIndex = {}
   const push = (name, url) => {
-    if (!url || seen.has(url) || ordered.length >= refImageLimit.value) return
-    seen.add(url)
-    ordered.push({ name, imageUrl: url })
+    const index = urls.indexOf(url)
+    if (name && index >= 0 && !(name in nameToIndex)) nameToIndex[name] = index + 1
   }
   const scene = getStoryboardScene(sb)
   push(scene?.location || '', scene?.image_url || scene?.imageUrl)
@@ -3215,8 +3224,6 @@ function getShotReferenceIndexMap(sb) {
   for (const prop of getStoryboardProps(sb)) {
     push(prop.name || '', prop?.image_url || prop?.imageUrl)
   }
-  const nameToIndex = {}
-  ordered.forEach((a, i) => { if (a.name && !(a.name in nameToIndex)) nameToIndex[a.name] = i + 1 })
   return nameToIndex
 }
 

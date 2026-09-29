@@ -81,3 +81,8 @@ description: 分镜拆解专业规范 — 将剧本拆分为可承载多个子�
 - `image_prompt` 要突出单帧构图、角色外观、环境和光线（对应段落第一个子镜头）
 - `bgm_prompt` 和 `sound_effect` 用简洁短语即可，但不能空泛到只有“紧张”“悲伤”
 - 如需调整，调用 `update_storyboard` 修改具体段落
+
+
+## Creative scope and reference budget
+
+The H3 reference budget is at most 9 unique image inputs per generated shot, shared freely among characters, scene and props. It is not a story-wide cast or prop limit and is not a quota per category. Support ensemble casts and prop-heavy stories whenever the idea needs them. Do not rewrite every story around two characters, one scene and one prop for convenience. Keep all narratively necessary characters and props in the episode inventory. If a shot needs more reference images than the provider accepts, propose justified coverage shots or a deliberate reference selection and explain which subjects lack a reference; never silently omit story participants or images. A shot currently has one primary scene binding; represent location changes as coverage shots when narratively appropriate.
