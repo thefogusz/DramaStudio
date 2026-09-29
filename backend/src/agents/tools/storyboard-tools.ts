@@ -1,3 +1,5 @@
+import { readBrief, checkShotDuration } from '../../services/production.js'
+import { timingCheck } from '../../services/production-contract.js'
 /**
  * 分镜拆解 Agent 工具
  * 模块级单例 — episodeId + dramaId 通过 RequestContext 按请求注入
@@ -199,6 +201,7 @@ const readStoryboardContext = createTool({
       }))
 
     const payload = {
+      production_brief: readBrief(episodeId),
       episode: {
         id: ep.id,
         title: ep.title,
@@ -256,6 +259,15 @@ const saveStoryboards = createTool({
     const ids = requireIds(context)
     if ('error' in ids) return ids
     const { episodeId, dramaId } = ids
+    const brief=readBrief(episodeId)
+    if(brief) {
+      if(storyboards.some(s=>!Number.isFinite(s.duration)||Number(s.duration)<=0)) throw new Error('กรุณาระบุเวลาที่ถูกต้องสำหรับทุกช็อต')
+      const existing=replace_existing ? [] : (await db.select().from(schema.storyboards).where(eq(schema.storyboards.episodeId,episodeId))).filter(s=>!s.deletedAt)
+      const durations=new Map(existing.map(s=>[s.storyboardNumber,Number(s.duration||0)]))
+      for(const shot of storyboards) durations.set(shot.shot_number,Number(shot.duration||0))
+      const timing=timingCheck(brief,Array.from(durations.values()).reduce((n,s)=>n+s,0))
+      if(timing.max!=null && timing.seconds>timing.max) throw new Error('ช็อตรวมเกินกรอบเวลาตอน กรุณาปรับแผนก่อนบันทึก')
+    }
     const ts = now()
     logTaskProgress('StoryboardTool', 'save-begin', {
       episodeId,
@@ -378,6 +390,7 @@ const updateStoryboard = createTool({
     const { episodeId, dramaId } = ids
     const [storyboard] = await db.select().from(schema.storyboards).where(eq(schema.storyboards.id, storyboard_id))
     if (!storyboard) return { error: `Storyboard ${storyboard_id} not found` }
+    if(fields.duration!=null) checkShotDuration(episodeId,fields.duration,storyboard_id)
 
     // 过滤模型回传的垃圾值：视频提示词 Agent 常把整行字段回传，
     // 拿不准的字符串字段写成 "null"/"undefined"，直接覆盖会毁掉已有内容

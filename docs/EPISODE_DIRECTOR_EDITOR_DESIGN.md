@@ -1,6 +1,6 @@
 # แบบระบบ: กรอบเวลา EP และ Codex Director / Editor
 
-สถานะ: แบบระบบสำหรับพัฒนาต่อ ยังไม่ได้เปิดใช้ในแอป
+สถานะ: เพิ่มกรอบเวลา, Director ในผู้ช่วยแบ่งช็อตเดิม, Editor แบบ metadata และเรนเดอร์ตาม EDL แล้ว; การตรวจภาพ/เสียงเชิงความหมายยังเป็นงานต่อยอด
 วันที่: 2026-09-29
 
 ## 1. เป้าหมายและขอบเขต
@@ -218,3 +218,17 @@ Fingerprint รวม brief revision, script hash, storyboard fields, selected s
 โหมด Director ก่อนมีบทต้องอ่าน creative_brief ได้โดยไม่บังคับให้มี screenplay และบันทึกแผนอย่างเดียว ไม่มีสิทธิ์ replace_existing ช็อต ส่วนโหมดแบ่งช็อตทำงานหลังบทพร้อม โดยใช้ tools/การป้องกัน revision เดิม แผนไม่ได้บังคับให้ทำ Director → Writer → Director หลายรอบทุกครั้ง ผู้ใช้มีบทพร้อมแล้วข้ามการวางเรื่องล่วงหน้าได้
 
 ชื่อ Director ในส่วนอื่นของเอกสารหมายถึงบทบาทที่เพิ่มให้ storyboard_breaker ไม่ใช่ Agent ใหม่ แผนพัฒนาจึงเพิ่ม Agent จริงเฉพาะ Editor นอกเหนือจาก 4 Agent เดิม
+
+## 14. สิ่งที่เปิดใช้แล้วในรอบนี้
+
+- การ์ดกรอบเวลาในหน้าตอนทุกขั้น ตั้งเวลา/preset/โจทย์/source policy ก่อนให้ Codex คิดบท
+- ขยายผู้ช่วยแบ่งช็อตเดิมด้วย read_production_context/save_director_plan ไม่เพิ่ม Director registry ซ้ำ
+- เพิ่ม editor พร้อมสกิลและการตั้งค่า ใช้ native Codex provider เดิม
+- เครื่องมืออ่าน metadata คลิปจริง ตรวจ hash และรักษาคลิปที่มีเสียง/บทพูดทั้งช่วง
+- EDL แบบ cut ตรงพร้อมช่วงเข้า/ออกและเหตุผล ตรวจลำดับตอนเต็ม/ตัวอย่างตอน ระยะเวลา scope และ revision
+- เรนเดอร์ draft/final ด้วย FFmpeg normalize FPS/ภาพ/เสียง คลิปไม่มีเสียงมี silence stream; probe ผลลัพธ์และตรวจเวลา
+- ประวัติใช้ video_merges เดิม draft/teaser ไม่แทน episode.video_url ส่วน final ตอนเต็มแทนเมื่อสำเร็จเท่านั้น
+- ตอนเดิมไม่ถูกตั้งเวลาอัตโนมัติ การแก้ brief ทำให้แผน stale และรักษาสื่อเดิม
+- ตรวจ constraints ด้วย unit/integration tests, คลิปสังเคราะห์ต่าง FPS/ขนาด/เสียง, การเรนเดอร์จริง และ opt-in ทดสอบ Codex เรียก tools จริง
+
+ข้อจำกัดที่แสดงใน UI: Editor รุ่นนี้ใช้ metadata และคำบรรยาย ไม่ได้ตรวจภาพเคลื่อนไหว/ฟังเสียงจริง จึงยังไม่มี word-level dialogue cuts, transitions แบบซ้อน, เพลงหรือซับใหม่ และ export timing override แยกจาก brief; preset มีผลต่อการวางเรื่อง/เลือกช่วงที่ตัดได้ ไม่รับประกันความต่างเมื่อทุกคลิปต้องรักษาทั้งช่วง

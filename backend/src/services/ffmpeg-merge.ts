@@ -1,3 +1,5 @@
+import { readBrief, probeVideo } from './production.js'
+import { timingCheck } from './production-contract.js'
 /**
  * FFmpeg 多镜头拼接 — 将所有生成后的镜头视频拼接为一集
  */
@@ -28,17 +30,21 @@ export async function mergeEpisodeVideos(episodeId: number, dramaId: number, sto
     .where(eq(schema.storyboards.episodeId, episodeId))
     .orderBy(schema.storyboards.storyboardNumber)
 
+  storyboards = storyboards.filter(sb => !sb.deletedAt)
+  const allShotCount=storyboards.length
+
   if (storyboardIds?.length) {
     const allow = new Set(storyboardIds.map(Number))
     storyboards = storyboards.filter(sb => allow.has(sb.id))
   }
 
-  // 允许部分拼接:按镜号顺序拼接已生成的镜头,未生成的跳过
-  const clips = storyboards
+  // Partial exports require an explicit selection; every selected shot must be ready.
+  const readyVideos = storyboards
     .map(sb => ({ sb, url: sb.videoUrl || sb.composedVideoUrl }))
     .filter(c => Boolean(c.url)) as { sb: typeof storyboards[number]; url: string }[]
 
-  if (clips.length === 0) throw new Error('所选镜头还没有可拼接的视频')
+  if (readyVideos.length === 0) throw new Error('ช็อตที่เลือกยังไม่มีคลิปสำหรับรวม')
+  if (readyVideos.length !== storyboards.length) throw new Error('คลิปยังไม่ครบ กรุณาเลือกเฉพาะช็อตที่พร้อม หากต้องการส่งออกบางส่วน')
 
   // 拼接前探测 ffmpeg：二进制损坏时 fluent-ffmpeg 的同步 EFTYPE 会崩掉整个进程，
   // 这里提前拦截并给出可操作的修复指引（路由层会作为 400 返回前端）
@@ -49,13 +55,19 @@ export async function mergeEpisodeVideos(episodeId: number, dramaId: number, sto
 
   // 校验视频文件真实存在:DB 里的 video_url 可能指向已被清理的文件,
   // 直接拼会得到 ffmpeg 的 "No such file or directory" 晦涩报错
-  const missing = clips.filter(c => !fs.existsSync(toAbsPath(c.url)))
+  const missing = readyVideos.filter(c => !fs.existsSync(toAbsPath(c.url)))
   if (missing.length > 0) {
     const nums = missing.map(c => `S${c.sb.storyboardNumber}`).join('、')
     throw new Error(`镜头 ${nums} 的视频文件已丢失（本地文件不存在），请重新生成这些镜头的视频，或在拼接时取消勾选`)
   }
 
-  const videos = clips.map(c => c.url)
+  const brief=readBrief(episodeId)
+  if(brief) {
+    const measured=await Promise.all(readyVideos.map(c=>probeVideo(toAbsPath(c.url))))
+    const check=timingCheck(brief,measured.reduce((n,m)=>n+Number(m.format.duration),0))
+    if(check.max!=null && check.seconds>check.max) throw new Error('คลิปรวมเกินกรอบเวลาตอน กรุณาวางแผนตัดต่อก่อน')
+  }
+  const videos = readyVideos.map(c => c.url)
 
   logTaskStart('MergeTask', 'episode-merge', { episodeId, dramaId, clips: videos.length })
 
@@ -64,9 +76,9 @@ export async function mergeEpisodeVideos(episodeId: number, dramaId: number, sto
   const res = await db.insert(schema.videoMerges).values({
     episodeId,
     dramaId,
-    title: `Episode ${episodeId} Merge`,
+    title: `Episode ${episodeId} Merge${storyboards.length<allShotCount ? ' · ฉบับบางส่วน' : ''}`,
     provider: 'ffmpeg',
-    model: 'ffmpeg-concat-h264-aac',
+    model: storyboards.length<allShotCount ? 'ffmpeg-concat-h264-aac-partial' : 'ffmpeg-concat-h264-aac',
     status: 'processing',
     scenes: JSON.stringify(videos),
     createdAt: ts,
@@ -74,7 +86,7 @@ export async function mergeEpisodeVideos(episodeId: number, dramaId: number, sto
   const mergeId = getInsertId(res)
 
   // 异步执行
-  doMerge(mergeId, episodeId, videos).catch(async err => {
+  doMerge(mergeId, episodeId, videos, storyboards.length===allShotCount).catch(async err => {
     logTaskError('MergeTask', 'episode-merge', { mergeId, episodeId, error: err.message })
     console.error(`[Merge] Failed:`, err)
     await db.update(schema.videoMerges)
@@ -85,7 +97,7 @@ export async function mergeEpisodeVideos(episodeId: number, dramaId: number, sto
   return mergeId
 }
 
-async function doMerge(mergeId: number, episodeId: number, videos: string[]) {
+async function doMerge(mergeId: number, episodeId: number, videos: string[], fullEpisode: boolean) {
   // 生成 concat 列表文件
   const listDir = path.join(STORAGE_ROOT, 'temp')
   fs.mkdirSync(listDir, { recursive: true })
@@ -128,6 +140,11 @@ async function doMerge(mergeId: number, episodeId: number, videos: string[]) {
 
   // 获取时长
   const duration = await getVideoDuration(outputPath)
+  const timing=timingCheck(readBrief(episodeId),duration)
+  if(timing.max!=null && duration>timing.max) {
+    fs.unlinkSync(outputPath)
+    throw new Error('ไฟล์รวมคลิปเกินกรอบเวลา กรุณาตัดต่อด้วยแผนแล้วลองใหม่')
+  }
 
   const mergedRelative = `static/merged/${outputFilename}`
 
@@ -140,7 +157,7 @@ async function doMerge(mergeId: number, episodeId: number, videos: string[]) {
     .where(eq(schema.videoMerges.id, mergeId))
 
   // 更新 episode
-  await db.update(schema.episodes)
+  if(fullEpisode) await db.update(schema.episodes)
     .set({ videoUrl: mergedRelative, updatedAt: now() })
     .where(eq(schema.episodes.id, episodeId))
 
@@ -151,7 +168,7 @@ function getVideoDuration(filePath: string): Promise<number> {
   return new Promise((resolve) => {
     ffmpeg.ffprobe(filePath, (err, metadata) => {
       if (err) { resolve(0); return }
-      resolve(Math.round(metadata.format.duration || 0))
+      resolve(Number(metadata.format.duration || 0))
     })
   })
 }

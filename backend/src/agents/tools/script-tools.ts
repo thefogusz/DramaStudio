@@ -7,6 +7,7 @@ import { z } from 'zod'
 import { db, schema } from '../../db/index.js'
 import { eq } from 'drizzle-orm'
 import { now } from '../../utils/response.js'
+import { readBrief } from '../../services/production.js'
 import { getEpisodeId } from '../context.js'
 
 const readEpisodeScript = createTool({
@@ -19,9 +20,9 @@ const readEpisodeScript = createTool({
     const [ep] = await db.select().from(schema.episodes)
       .where(eq(schema.episodes.id, episodeId))
     if (!ep) return { error: `Episode not found (id=${episodeId})` }
-    const content = ep.content || ep.scriptContent
+    const content = ep.content || ep.scriptContent || readBrief(episodeId)?.creative_brief
     if (!content) return { error: `Episode has no content (id=${episodeId})` }
-    return { content, word_count: content.length, episode_id: episodeId }
+    return { content, word_count: content.length, episode_id: episodeId, production_brief: readBrief(episodeId) }
   },
 })
 
@@ -37,7 +38,7 @@ const rewriteToScreenplay = createTool({
     const [ep] = await db.select().from(schema.episodes)
       .where(eq(schema.episodes.id, episodeId))
     if (!ep) return { error: `Episode not found` }
-    const source = ep.content || ep.scriptContent
+    const source = ep.content || ep.scriptContent || readBrief(episodeId)?.creative_brief
     if (!source) return { error: `Episode has no content to rewrite` }
 
     return {

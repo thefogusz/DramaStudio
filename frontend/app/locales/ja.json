@@ -361,7 +361,7 @@
       "scriptRewriter": "脚本リライト",
       "extractor": "キャラクター・シーン抽出",
       "storyboardBreaker": "分镜分解",
-      "promptGenerator": "プロンプト生成",
+      "promptGenerator": "プロンプト生成", "editor": "編集アシスタント",
       "langFallback": "中国語にフォールバック",
       "followContentLang": "編集言語：{lang}（「一般 → AI コンテンツ言語」で切替）"
     },

@@ -1,3 +1,4 @@
+import { checkShotDuration } from '../services/production.js'
 import { Hono } from 'hono'
 import { eq } from 'drizzle-orm'
 import { db, getInsertId, schema } from '../db/index.js'
@@ -119,7 +120,8 @@ app.put('/:id', async (c) => {
   const id = Number(c.req.param('id'))
   const body = await c.req.json()
   const [storyboard] = await db.select().from(schema.storyboards).where(eq(schema.storyboards.id, id))
-  if (!storyboard) return badRequest(c, '镜头不存在')
+  if (!storyboard) return badRequest(c, 'ไม่พบช็อตนี้')
+  if('duration' in body) {try{checkShotDuration(storyboard.episodeId,body.duration,id)}catch(e:any){return badRequest(c,e.message)}}
   logTaskStart('StoryboardAPI', 'update', {
     storyboardId: id,
     episodeId: storyboard.episodeId,

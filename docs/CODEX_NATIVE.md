@@ -178,3 +178,13 @@ Regression coverage is in `backend/tests/native-guard.test.ts`.
 - No paid AI requests were made. The example contains a script and prompts, not
   generated footage. Actual native image-tool generation was not exercised here;
   import and attachment were tested using locally generated test images.
+
+## กรอบเวลาตอนและ Editor
+
+เปิดตอน แล้วขยาย “กรอบเวลาและการกำกับตอน” ตั้งความยาว, ไม่เกิน/เป้าหมาย ±5%, preset, โจทย์และนโยบายบท จากนั้นบันทึกก่อนกดผู้กำกับ/คิดบท ผู้ช่วยแบ่งช็อตเดิมทำ Director และใช้กรอบเวลาเดียวกัน
+
+เมื่อมีคลิปแล้ว ไปส่งออก ขยาย “แผนตัดต่อและส่งออก” ให้ Editor วางแผน ตรวจรายการช่วงเข้า/ออกและเหตุผล แล้วเรนเดอร์ฉบับร่างหรือส่งออกตามแผน ผลอยู่ในรายการฉบับส่งออกเดิม หากข้อมูลเปลี่ยนต้องวิเคราะห์ใหม่
+
+Editor ปัจจุบันอ่าน metadata และคำบรรยาย ยังไม่ได้ฟังเสียง/ตรวจภาพเคลื่อนไหว จึงรักษาคลิปที่มีเสียงหรือบทพูดทั้งช่วง ไม่ตัดกลางคำ และแจ้งเมื่อไม่สามารถทำตามกรอบเวลาได้ ใช้ Codex native; rendering ใช้ FFmpeg ในเครื่อง ไม่มี LLM API เพิ่ม
+
+ตรวจ: backend `node --import tsx --test tests/production.test.ts tests/production-integration.test.ts`; opt-in native smoke เพิ่ม `TEST_NATIVE_PRODUCTION=1` ใน process environment. แบบระบบและขอบเขตใน docs/EPISODE_DIRECTOR_EDITOR_DESIGN.md

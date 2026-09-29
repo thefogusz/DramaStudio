@@ -38,6 +38,7 @@ try {
 /** 每个 Agent 注册的 skill 目录（相对 workspace/skills/，含子规范目录；目录名需符合 Agent Skills 规范：小写+连字符） */
 const AGENT_SKILL_MAP: Record<string, string[]> = {
   script_rewriter: ['script-rewriter'],
+  editor: ['editor'],
   extractor: ['extractor'],
   storyboard_breaker: ['storyboard-breaker'],
   prompt_generator: [

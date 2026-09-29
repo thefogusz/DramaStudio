@@ -26,6 +26,8 @@ export function initDb() {
 }
 
 initDb()
+// Native edit renders are local processes; they cannot survive a server restart.
+sqlite.prepare("UPDATE video_merges SET status='failed', error_msg=? WHERE model LIKE 'codex-edit-%' AND status IN ('pending','processing')").run('บริการเริ่มใหม่ระหว่างเรนเดอร์ กรุณาสั่งเรนเดอร์ตามแผนอีกครั้ง')
 
 // MySQL 老用户一次性自动迁移：仅在显式配置 MySQL + 空库 + 无标记时触发（详见 mysql-import.ts 头注释）
 await maybeAutoImportMysql(sqlite, dbPath)

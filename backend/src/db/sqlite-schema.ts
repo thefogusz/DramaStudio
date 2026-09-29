@@ -405,6 +405,13 @@ const UPGRADE_SQL = 'UPDATE style_presets SET "name" = ?, "prompt" = ?, "descrip
 const REMOVE_SQL = 'DELETE FROM style_presets WHERE "value" = ? AND "prompt" = ?'
 
 export function initSqliteSchema(sqlite: Database.Database) {
+  sqlite.exec(`CREATE TABLE IF NOT EXISTS episode_production_briefs (
+    episode_id INTEGER PRIMARY KEY, revision INTEGER NOT NULL, brief_json TEXT NOT NULL, updated_at TEXT NOT NULL
+  ); CREATE TABLE IF NOT EXISTS episode_production_plans (
+    id INTEGER PRIMARY KEY AUTOINCREMENT, episode_id INTEGER NOT NULL, kind TEXT NOT NULL,
+    fingerprint TEXT NOT NULL, plan_json TEXT NOT NULL, created_at TEXT NOT NULL
+  ); CREATE INDEX IF NOT EXISTS production_plans_episode ON episode_production_plans(episode_id,kind,id);`)
+
   for (const statement of sqliteSchemaStatements) {
     sqlite.exec(statement)
   }

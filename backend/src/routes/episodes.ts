@@ -7,7 +7,22 @@ import { getActiveConfigId } from '../services/ai.js'
 import { EXTRACT_TARGETS, getExtractionStatus, startExtraction, type ExtractTarget } from '../services/extraction.js'
 import { getVideoPromptBatchStatus, startVideoPromptBatch } from '../services/video-prompts.js'
 
+import { startProductionRender } from '../services/production-render.js'
+import { readBrief, saveBrief, timingStatus, listPlans, editPresets, productionSnapshot } from '../services/production.js'
+const productionError=(e:any)=>e.name==='ZodError'?'กรุณาตรวจความยาว รูปแบบเวลา และสไตล์ที่เลือก':e.message
 const app = new Hono()
+app.get('/:id/production', c => {
+ try { const id=Number(c.req.param('id')); return success(c,{brief:readBrief(id),timing:timingStatus(id),plans:listPlans(id),presets:editPresets,fingerprint:productionSnapshot(id).fingerprint}) }
+ catch(e:any) {return badRequest(c,productionError(e))}
+})
+app.post('/:id/production/render', async c => {
+ try {const body=await c.req.json(); if(!Number.isSafeInteger(body.plan_id)||body.plan_id<=0||typeof body.draft!=='boolean') return badRequest(c,'ข้อมูลแผนเรนเดอร์ไม่ถูกต้อง'); return success(c,{merge_id:await startProductionRender(Number(c.req.param('id')),body.plan_id,body.draft),status:'pending'})}
+ catch(e:any) {return badRequest(c,productionError(e))}
+})
+app.put('/:id/production', async c => {
+ try { const body=await c.req.json(); return success(c,saveBrief(Number(c.req.param('id')),body.brief,body.expected_revision)) }
+ catch(e:any) {return badRequest(c,productionError(e))}
+})
 
 // POST /episodes — Create a new episode
 app.post('/', async (c) => {
@@ -272,7 +287,8 @@ app.get('/:id/pipeline-status', async (c) => {
 
   const sbsWithImage = sbs.filter(s => s.firstFrameImage || s.composedImage)
   const sbsWithVideo = sbs.filter(s => s.videoUrl)
-  const latestMerge = merges[merges.length - 1]
+  const finalMerges=merges.filter(m=>!m.model?.includes('draft')&&!m.model?.endsWith('-partial')&&!m.model?.endsWith('-teaser'))
+  const latestMerge = finalMerges[finalMerges.length - 1]
 
   function stepStatus(done: boolean, partial?: boolean) {
     if (done) return 'done'

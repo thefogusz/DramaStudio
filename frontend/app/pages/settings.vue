@@ -933,6 +933,7 @@ const agentDefs = computed(() => [
   { type: 'extractor', label: t('settings.agents.extractor'), icon: '🔍' },
   { type: 'storyboard_breaker', label: t('settings.agents.storyboardBreaker'), icon: '🎬' },
   { type: 'prompt_generator', label: t('settings.agents.promptGenerator'), icon: '🖼' },
+  { type: 'editor', label: t('settings.agents.editor'), icon: '✂️' },
 ])
 
 function getAgentCfg(type) {

@@ -8,6 +8,9 @@ import { Agent } from '@mastra/core/agent'
 import type { RequestContext } from '@mastra/core/request-context'
 import { codexTextModel } from '../services/codex-text.js'
 import { checkNativeVersion, guardedNativeTools } from './native-guard.js'
+import { productionReadTools, directorTools, editorTools } from './tools/production-tools.js'
+import { productionDirective } from '../services/production.js'
+import { getEpisodeId } from './context.js'
 import { scriptTools } from './tools/script-tools.js'
 import { extractTools } from './tools/extract-tools.js'
 import { storyboardTools } from './tools/storyboard-tools.js'
@@ -149,14 +152,19 @@ video_prompt 规则（硬约束）：
   },
 }
 
+DEFAULT_PROMPTS.editor = {
+ name: 'ผู้ช่วยตัดต่อ',
+ instructions: `You are the native episode editor. Read read_production_context and read_edit_context. Use the selected preset and descriptions to propose an edit plan. Evidence is metadata only: never claim to have watched or listened. Keep protected audio/dialogue clips whole. Full episodes must preserve clip order and all shots; teaser may select a subset. Never fabricate media or cut speech to meet time. If impossible, explain what needs script/shot revision, do not save a bad plan. Save a complete plan with save_edit_plan using returned fingerprint, hashes, integer in_ms/out_ms and reasons. No shell, generation or script updates. Finish briefly in Thai.`
+}
 export const validAgentTypes = Object.keys(DEFAULT_PROMPTS)
 
 const AGENT_TOOLS: Record<string, Record<string, any>> = {
-  script_rewriter: scriptTools,
+  script_rewriter: { ...scriptTools, ...productionReadTools },
   extractor: extractTools,
-  storyboard_breaker: storyboardTools,
+  storyboard_breaker: { ...storyboardTools, ...directorTools },
+  editor: editorTools,
   prompt_generator: {
-    ...imagePromptTools,
+    ...imagePromptTools, ...productionReadTools,
     readStoryboardContext: storyboardTools.readStoryboardContext,
     updateStoryboard: storyboardTools.updateStoryboard,
   },
@@ -176,7 +184,11 @@ export async function resolveAgentInstructions(type: string, lang?: string | nul
 }
 
 function buildInstructions(type: string) {
-  return ({ requestContext }: { requestContext?: RequestContext }) => resolveAgentInstructions(type, getContentLanguageFromRC(requestContext))
+  return async ({ requestContext }: { requestContext?: RequestContext }) => {
+ const instructions=await resolveAgentInstructions(type, getContentLanguageFromRC(requestContext))
+ const episodeId=getEpisodeId(requestContext)
+ return [instructions, episodeId ? productionDirective(episodeId) : ''].filter(Boolean).join('\n\n')
+ }
 }
 
 /** Every text workflow uses Codex CLI; legacy LLM model/config overrides are ignored. */

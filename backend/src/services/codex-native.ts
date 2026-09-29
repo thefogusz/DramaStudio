@@ -168,6 +168,8 @@ export function exportNativeContext(sqlite: Database.Database, dramaId: number) 
   const stylePreset = sqlite.prepare('SELECT name, value, prompt, description FROM style_presets WHERE value=?').get(drama.style) || null
   const rows = (table: string) => sqlite.prepare(`SELECT * FROM ${table} WHERE drama_id=? AND deleted_at IS NULL`).all(dramaId) as Record<string, any>[]
   return {
+    production_briefs: sqlite.prepare('SELECT b.* FROM episode_production_briefs b JOIN episodes e ON e.id=b.episode_id WHERE e.drama_id=? AND e.deleted_at IS NULL').all(dramaId),
+    production_plans: sqlite.prepare('SELECT p.* FROM episode_production_plans p JOIN episodes e ON e.id=p.episode_id WHERE e.drama_id=? AND e.deleted_at IS NULL').all(dramaId),
     version: 1, drama, style_preset: stylePreset, characters: rows('characters'), scenes: rows('scenes'), props: rows('props'),
     episodes: rows('episodes').map(ep => ({ ...ep,
       characters: sqlite.prepare('SELECT character_id FROM episode_characters WHERE episode_id=?').all(ep.id).map((r: any) => r.character_id),
