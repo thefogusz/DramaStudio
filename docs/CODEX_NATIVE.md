@@ -4,13 +4,28 @@
 
 หน้าจอใช้ภาษาไทยเป็นค่าเริ่มต้นสำหรับผู้ใช้ใหม่ เปลี่ยนภาษาได้จากเมนูด้านบนหรือ **ตั้งค่า → ทั่วไป** โดยเปลี่ยนภาษาหน้าจอและภาษาที่ AI สร้างใหม่พร้อมกัน ข้อมูลบทละครและชื่อที่เคยบันทึกไว้จะคงเดิม การกด **ยกเลิก** จะไม่เปลี่ยนภาษา
 
-ขั้นตอนหลัก: **เรื่องต้นฉบับ → บทละคร → ตัวละครและฉาก → สร้างวิดีโอ → รวมคลิปและส่งออก** ปุ่ม AI ภายในแอปยังใช้ API; งานจาก Codex ทำผ่านแชตแล้วนำเข้าด้วยคำสั่งด้านล่าง
+ขั้นตอนหลัก: **เรื่องต้นฉบับ → บทละคร → ตัวละครและฉาก → สร้างวิดีโอ → รวมคลิปและส่งออก** ปุ่มงานข้อความภายในแอปใช้ Codex CLI ในเครื่อง; งานจากแชต Codex ยังคงนำเข้าด้วยคำสั่งด้านล่างได้
 
 Codex works in this workspace and delivers files to Huobao. This bridge never calls
 an AI API or starts another Codex process. It uses the existing SQLite schema and
-static media layout. The app's existing AI buttons still call their configured APIs;
-they do not wake up a Codex chat. Image generation uses whatever native image tool
+static media layout. App text buttons now start isolated Codex CLI jobs using ChatGPT
+authentication; they do not send messages to an existing desktop chat. Image generation uses whatever native image tool
 is available in the current chat, without assuming a particular model or unlimited quota.
+
+## ปุ่มงานข้อความ → Codex ในเครื่อง
+
+- ครอบคลุมเขียนบท แยกตัวละคร/ฉาก/พร็อป แบ่งช็อต เขียนคำสั่งภาพ และเขียนคำสั่งวิดีโอ รวมทั้งงาน batch และ prompt ที่ระบบเตรียมให้ก่อนสร้างสื่อ
+- ต้องมี `codex` ใน PATH และ `codex login` ด้วย ChatGPT หากเปิด CLI ไม่ได้ ตั้ง `HUOBAO_CODEX_BIN` เป็นพาธเต็มของ executable ก่อนเปิด backend
+- ตรวจใน **ตั้งค่า → บริการ AI → Codex ในเครื่อง** หรือ `GET /api/v1/agent/native/status`
+- ไม่ใช้ text provider, API key, model override หรือ config ID จากระบบเดิม และซ่อน text API config โดยไม่ลบข้อมูลเก่าของผู้ใช้
+- Codex ยังเชื่อมบริการออนไลน์และใช้โควตาบัญชี ไม่ใช่โมเดลออฟไลน์บนเครื่อง
+- CLI ทำงานในโฟลเดอร์แยกแบบ read-only ปิด shell/browser/apps/plugins และส่งผล JSON ให้ backend ตรวจและเรียกเครื่องมือบันทึกเดิม CLI ไม่ได้รับ API key ของแอป
+- งานข้อความเข้าคิวทีละเวิร์กโฟลว์เพื่อไม่ให้การแยกหลายประเภทชนกัน แต่ละคำขอโมเดลมีเวลาสูงสุด 5 นาที เมื่อผู้ใช้แก้ข้อมูลระหว่างรอ ระบบหยุดก่อนเขียนทับและแจ้งให้รีเฟรช
+- บันทึกสถานะ/ผลลัพธ์อยู่ใน `data/native/codex-jobs/` (หรือ data root ที่ตั้งไว้) งานที่ backend ถูกปิดกลางทางต้องเริ่มใหม่ ไม่มีการรันต่ออัตโนมัติหลังเปิดโปรแกรม
+- ไม่เปลี่ยนงานสร้างวิดีโอผ่าน fal หรือเครื่องมือนำเข้า/แนบภาพจากแชต Codex การมีคำสั่งภาพไม่ได้หมายถึงสร้างภาพแล้ว
+- คำเตือน/ข้อผิดพลาดของระบบมีข้อความไทย และไม่แปลเนื้อเรื่องหรือ prompt ที่ผู้ใช้บันทึกไว้
+
+เอกสารอ้างอิง: https://learn.chatgpt.com/docs/non-interactive-mode และ https://learn.chatgpt.com/docs/auth
 
 ## Setup
 

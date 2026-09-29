@@ -25,7 +25,7 @@ const SKILLS_DIR = path.join(WORKSPACE_DIR, 'skills')
 // 覆写默认 filesystem instructions（默认文案带绝对路径，暴露 workspace 字样）
 const FILESYSTEM_INSTRUCTIONS =
   '本地文件目录：用于读写技能定义、提示词等项目文件。相对路径均以此目录为根解析；文件访问仅限此目录之内。'
-const localFilesystem = () => new LocalFilesystem({ basePath: WORKSPACE_DIR, instructions: FILESYSTEM_INSTRUCTIONS })
+const localFilesystem = (readOnly = false) => new LocalFilesystem({ basePath: WORKSPACE_DIR, instructions: FILESYSTEM_INSTRUCTIONS, readOnly })
 
 // 启动时确保工作目录存在（Agent 文件读写的 jail 根）
 // 桌面版打包后模块可能仍从只读位置加载，失败不阻断启动（路由层会给出明确报错）
@@ -56,7 +56,7 @@ export const skillWorkspaces: Record<string, Workspace> = Object.fromEntries(
     new Workspace({
       id: `workspace-${agentType}`,
       name: `${agentType} workspace`,
-      filesystem: localFilesystem(),
+      filesystem: localFilesystem(true),
       skills: () => scanSkillPaths().filter(p =>
         prefixes.some(prefix => p === `skills/${prefix}` || p.startsWith(`skills/${prefix}/`))),
     }),

@@ -50,7 +50,13 @@ export function mapError(err: unknown, opts?: { fallback?: string }): string {
   if (TIMEOUT_RE.test(msg)) return t('errors.timeout')
 
   // 后端友好中文（短、含中文、无技术特征）直接透传
-  if (msg.length <= 40 && CJK_RE.test(msg) && !TECHY_RE.test(msg)) return msg
+  if (/[ก-๙]/.test(msg) && !CJK_RE.test(msg) && msg.length <= 220) return msg
+  if (CJK_RE.test(msg)) {
+    if (/不存在|未找到|找不到/.test(msg)) return t('errors.notFound')
+    if (/配置|模型/.test(msg)) return t('errors.configuration')
+    if (/需要|无效|参数|不能为空/.test(msg)) return t('errors.invalidInput')
+    return opts?.fallback ? t(opts.fallback) : t('errors.unknown')
+  }
 
   if (/^\d{3}$/.test(msg)) return t('errors.requestFailed', { status: msg })
 

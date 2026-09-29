@@ -57,6 +57,10 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
   }
 
   if (p === 'gemini') {
+    if (serviceType === 'image') return {
+      method: 'GET', url: joinProviderUrl(baseUrl, '/v1beta', '/models'),
+      headers: geminiHeaders(apiKey), body: undefined,
+    }
     // 探针统一走 generateContent:文本运行时(AI SDK)走的就是它,官方与中转站都支持;
     // interactions 端点很多中转站未配置,探它会误报 500。
     // 用最小合法请求体而非空体——空体在部分中转站会触发上游认证失败的误报
@@ -129,6 +133,7 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
 app.get('/', async (c) => {
   const serviceType = c.req.query('service_type')
   let rows = await db.select().from(schema.aiServiceConfigs)
+  rows = rows.filter(r => r.serviceType !== 'text')
   if (serviceType) rows = rows.filter(r => r.serviceType === serviceType)
 
   const parsed = rows.map(withParsedFields)
@@ -138,6 +143,7 @@ app.get('/', async (c) => {
 // POST /ai-configs
 app.post('/', async (c) => {
   const body = await c.req.json()
+  if (body.service_type === 'text') return badRequest(c, 'งานข้อความใช้ Codex ในเครื่อง ไม่ต้องตั้งค่า LLM API')
   const ts = now()
 
   // 验证必填字段
@@ -180,6 +186,7 @@ app.post('/', async (c) => {
 // POST /ai-configs/test
 app.post('/test', async (c) => {
   const body = await c.req.json()
+  if (body.service_type === 'text') return badRequest(c, 'งานข้อความใช้ Codex ในเครื่อง กรุณาตรวจสถานะ Codex แทนทดสอบ LLM API')
   if (!body.service_type || !body.provider || !body.base_url) {
     return badRequest(c, '需要 service_type、provider 与 base_url')
   }
@@ -271,6 +278,7 @@ app.put('/:id', async (c) => {
   if (!existing) return notFound(c)
 
   const serviceType = 'service_type' in body ? body.service_type : existing.serviceType
+  if (serviceType === 'text') return badRequest(c, 'งานข้อความใช้ Codex ในเครื่อง ไม่ต้องตั้งค่า LLM API')
   const provider = 'provider' in body ? body.provider : existing.provider
   if (!isOfficialProvider(serviceType, provider)) {
     return badRequest(c, '不支持的 service_type/provider')

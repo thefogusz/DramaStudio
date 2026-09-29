@@ -42,7 +42,7 @@ export async function ensureCharacterFinalPrompt(char: CharacterRow, episodeId: 
     return fresh?.finalPrompt || ''
   } catch (err: any) {
     logTaskError('FinalPrompt', 'character-generate', { characterId: char.id, error: err.message })
-    return ''
+    throw err
   }
 }
 
@@ -57,7 +57,7 @@ export async function ensureSceneFinalPrompt(scene: SceneRow, episodeId: number,
     return fresh?.finalPrompt || ''
   } catch (err: any) {
     logTaskError('FinalPrompt', 'scene-generate', { sceneId: scene.id, error: err.message })
-    return ''
+    throw err
   }
 }
 
@@ -72,6 +72,6 @@ export async function ensurePropFinalPrompt(prop: PropRow, episodeId: number, fo
     return fresh?.finalPrompt || ''
   } catch (err: any) {
     logTaskError('FinalPrompt', 'prop-generate', { propId: prop.id, error: err.message })
-    return ''
+    throw err
   }
 }

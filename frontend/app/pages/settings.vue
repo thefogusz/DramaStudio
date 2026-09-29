@@ -78,6 +78,12 @@
             <h2 class="settings-title">{{ t('settings.ai.title') }}</h2>
             <p class="settings-desc">{{ t('settings.ai.desc') }}</p>
           </div>
+          <section class="card setup-panel">
+            <h3>{{ t('nativeCodex.title') }}</h3>
+            <p>{{ t('nativeCodex.description') }}</p>
+            <p role="status">{{ nativeStatus?.message || t('nativeCodex.checking') }}</p>
+            <button class="btn" :disabled="nativeChecking" @click="checkNativeCodex">{{ t('nativeCodex.check') }}</button>
+          </section>
           <section class="card quick-card">
             <div class="quick-card-head">
               <div class="setup-title">{{ t('settings.ai.quickTitle') }}</div>
@@ -677,7 +683,7 @@ import BaseSelect from '~/components/BaseSelect.vue'
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
 import { useI18n } from 'vue-i18n'
-import { aiConfigAPI, promptAPI, skillsAPI, storageAPI, stylePresetAPI, settingsAPI, serverUpdateAPI } from '~/composables/useApi'
+import { api, aiConfigAPI, promptAPI, skillsAPI, storageAPI, stylePresetAPI, settingsAPI, serverUpdateAPI } from '~/composables/useApi'
 import { useDesktopBridge } from '~/composables/useDesktopBridge'
 import { useMigrateState } from '~/composables/useMigrateState'
 import { useTheme } from '~/composables/useTheme'
@@ -1200,7 +1206,15 @@ async function saveStyle() {
   } catch (e) { toastError(e) }
 }
 
-onMounted(() => { loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets() })
+const nativeStatus = ref(null)
+const nativeChecking = ref(false)
+async function checkNativeCodex() {
+  nativeChecking.value = true
+  try { nativeStatus.value = await api.get('/agent/native/status') }
+  catch (error) { toastError(error) }
+  finally { nativeChecking.value = false }
+}
+onMounted(() => { checkNativeCodex(); loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets() })
 
 // ===== 应用内引导（设置页）：快捷配置 + 手动模板两步 =====
 const SETTINGS_TOUR = [

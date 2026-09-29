@@ -21,14 +21,7 @@
 
       <div class="studio-topbar-side">
         <div class="studio-model-picks">
-          <ModelSelect
-            v-if="textModelOptions.length"
-            v-model="chatModel"
-            :label="t('common.serviceType.text')"
-            :options="textModelOptions"
-            :default-label="t('episode.model.defaultWith', { model: textModelOptions[0].model })"
-            :show-config="textModelMultiCfg"
-          />
+          <span class="studio-meta-pill">{{ t('nativeCodex.textEngine') }}</span>
           <ModelSelect
             v-if="imageModelOptions.length"
             v-model="imageModel"
@@ -1598,8 +1591,8 @@ function toggleSidebar() {
   } catch { /* 静默 */ }
 }
 /** 顶栏文本模型覆盖参数：未选择时为 undefined，后端回退到 Agent/文本配置默认 */
-function chatModelOverride() { return bareModelName(chatModel.value) || undefined }
-function chatConfigId() { return ownerConfigId(textModelOptions.value, chatModel.value) }
+function chatModelOverride() { return undefined }
+function chatConfigId() { return undefined }
 const pendingCharImageIds = ref([])
 const pendingSceneImageIds = ref([])
 const pendingPropImageIds = ref([])
@@ -2655,19 +2648,26 @@ async function refresh() {
   await Promise.all([loadGenTasks(), loadExportMerges()])
 }
 
-function saveRaw() { episodeAPI.update(epId.value, { content: localRaw.value }); episode.value.content = localRaw.value }
-function saveScr() { episodeAPI.update(epId.value, { script_content: localScript.value }); episode.value.script_content = localScript.value }
+async function saveRaw() {
+  try { await episodeAPI.update(epId.value, { content: localRaw.value }); episode.value.content = localRaw.value; return true }
+  catch (error) { toastError(error); return false }
+}
+async function saveScr() {
+  if (episode.value.script_content === localScript.value) return true
+  try { await episodeAPI.update(epId.value, { script_content: localScript.value }); episode.value.script_content = localScript.value; return true }
+  catch (error) { toastError(error); return false }
+}
 // 发给 Agent 的 message 是功能性提示词而非 UI 文案：产出语言由后端全局「内容语言」指令控制，
 // 这里保持中文不随界面语言变化
-function doRewrite() { saveRaw(); runAgent('script_rewriter', '请读取剧本并改写为格式化剧本，然后保存', dramaId, epId.value, refresh, chatModelOverride(), chatConfigId()) }
-function skipRewrite() {
+async function doRewrite() { if (await saveRaw()) await runAgent('script_rewriter', '请读取剧本并改写为格式化剧本，然后保存', dramaId, epId.value, refresh, chatModelOverride(), chatConfigId()) }
+async function skipRewrite() {
   const raw = (localRaw.value || rawContent.value || '').trim()
   if (!raw) {
     toast.warning(t('episode.script.rawRequired'))
     return
   }
   localScript.value = raw
-  saveScr()
+  if (!await saveScr()) return
   toast.success(t('episode.script.skipDone'))
   panel.value = 'production'
   prodTab.value = 'assets'
@@ -2683,9 +2683,9 @@ const extractingTargets = ref([])
 const extractingLabels = computed(() => EXTRACT_TARGETS.value.filter(x => extractingTargets.value.includes(x.key)).map(x => x.label).join(t('common.listJoin')))
 function isExtracting(target) { return extractingTargets.value.includes(target) }
 
-function doExtract(target) {
+async function doExtract(target) {
   if (isExtracting(target) || !epId.value) return
-  saveScr()
+  if (!await saveScr()) return
   extractingTargets.value.push(target)
   episodeAPI.extract(epId.value, target, chatModelOverride(), chatConfigId())
     .then(() => pollExtractStatus(target))
@@ -2694,7 +2694,7 @@ function doExtract(target) {
       toastError(e)
     })
 }
-function doExtractAll() { EXTRACT_TARGETS.value.forEach(x => doExtract(x.key)) }
+async function doExtractAll() { for (const target of EXTRACT_TARGETS.value) await doExtract(target.key) }
 
 function pollExtractStatus(target, attempts = 150) {
   const label = EXTRACT_TARGETS.value.find(x => x.key === target)?.label || target

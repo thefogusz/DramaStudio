@@ -5,10 +5,12 @@ import { Hono } from 'hono'
 import { validAgentTypes } from '../agents/index.js'
 import { buildAgentRequestContext } from '../agents/context.js'
 import { mastra } from '../mastra/index.js'
+import { codexStatus } from '../services/codex-text.js'
 import { success, badRequest } from '../utils/response.js'
 import { logTaskError, logTaskPayload, logTaskProgress, logTaskStart, logTaskSuccess } from '../utils/task-logger.js'
 
 const app = new Hono()
+app.get('/native/status', async (c) => success(c, await codexStatus()))
 
 // Mastra v1.17 的 ToolCallChunk / ToolResultChunk 结构：
 // { type: 'tool-call', payload: { toolCallId, toolName, args } }

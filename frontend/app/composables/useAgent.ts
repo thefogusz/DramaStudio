@@ -11,6 +11,7 @@ export function useAgent() {
     if (running.value) { toast.warning(i18n.global.t('composables.agent.busy')); return }
     running.value = true
     runningType.value = type
+    toast.info(i18n.global.t('nativeCodex.working'))
     try {
       const data = await api.post<any>(`/agent/${type}/chat`, {
         message: msg,

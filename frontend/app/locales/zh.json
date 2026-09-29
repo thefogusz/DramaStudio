@@ -861,6 +861,9 @@
     }
   },
   "errors": {
+    "notFound": "The requested data was not found. Refresh and try again.",
+    "configuration": "Configuration is not ready. Check Codex or service settings.",
+    "invalidInput": "Some input is missing or invalid. Check it and try again.",
     "network": "无法连接服务器，请检查网络或服务是否已启动",
     "server": "服务返回异常，请稍后重试",
     "unavailable": "服务暂时不可用，请稍后重试",
@@ -953,4 +956,13 @@
   "promptCheck": "Video prompt for every shot",
   "assetCheck": "Reference images for cast, scenes and props"
 }
+,
+  "nativeCodex": {
+    "textEngine": "Text · local Codex",
+    "title": "Local Codex",
+    "description": "Writing, extraction, storyboards and prompts use Codex CLI signed in with ChatGPT. No LLM API key is needed. Codex chat and native imports remain available.",
+    "check": "Check connection",
+    "checking": "Checking Codex…",
+    "working": "Codex is working. Please wait."
+  }
 }
