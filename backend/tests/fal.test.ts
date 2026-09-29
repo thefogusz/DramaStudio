@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { FalVideoAdapter, FAL_VIDEO_MODEL } from '../src/services/adapters/fal.js'
+import { FalVideoAdapter, FAL_VIDEO_MODEL, FAL_VIDEO_MODELS } from '../src/services/adapters/fal.js'
 
 const adapter = new FalVideoAdapter()
 const config = { provider: 'fal', baseUrl: 'https://queue.fal.run', apiKey: 'fake-test-key', model: FAL_VIDEO_MODEL }
@@ -75,4 +75,29 @@ test('fal config supports videos only and connection test submits no generation'
     assert.equal(data.ok, false)
     assert.equal(data.reachable, true)
   } finally { globalThis.fetch = originalFetch }
+})
+
+
+test('every selectable fal family maps text/image requests and native parameters', () => {
+  for (const info of FAL_VIDEO_MODELS) {
+    const req = adapter.buildGenerateRequest({ ...config, model: info.textModel }, { id: 1, prompt: 'shot', duration: info.defaultDuration, resolution: '720p' })
+    assert.equal(req.url, `https://queue.fal.run/${info.textModel}`)
+    const img = adapter.buildGenerateRequest({ ...config, model: info.textModel }, { id: 1, prompt: 'shot', duration: info.defaultDuration, resolution: '1080p', firstFrameUrl: 'data:image/png;base64,AAAA' })
+    assert.equal(img.url, `https://queue.fal.run/${info.imageModel}`)
+    assert.equal(img.body.image_url, 'data:image/png;base64,AAAA')
+    assert.throws(() => adapter.buildGenerateRequest({ ...config, model: info.textModel }, { id: 1, duration: 99 }), /วินาที/)
+    if (info.family === 'h3') {
+      assert.equal(req.body.duration, 5)
+      assert.equal(req.body.resolution, '768P')
+      assert.equal(img.body.resolution, '1080P')
+      assert.equal(req.body.prompt_expansion_mode, 'disabled')
+      assert.equal(req.body.generate_audio, undefined)
+      assert.equal(img.body.aspect_ratio, undefined)
+    }
+    if (info.family === 'veo') assert.equal(req.body.duration, '8s')
+    if (info.family === 'wan') {
+      assert.equal(req.body.generate_audio, undefined)
+      assert.equal(req.body.multi_shots, false)
+    }
+  }
 })

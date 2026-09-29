@@ -1,0 +1,120 @@
+[
+  {
+    "id": "kling",
+    "label": "Kling 2.6 Pro",
+    "family": "kling",
+    "textModel": "fal-ai/kling-video/v2.6/pro/text-to-video",
+    "imageModel": "fal-ai/kling-video/v2.6/pro/image-to-video",
+    "durations": [
+      5,
+      10
+    ],
+    "ratios": [
+      "16:9",
+      "9:16",
+      "1:1"
+    ],
+    "resolutions": [],
+    "defaultDuration": 5
+  },
+  {
+    "id": "veo",
+    "label": "Google Veo 3.1",
+    "family": "veo",
+    "textModel": "fal-ai/veo3.1",
+    "imageModel": "fal-ai/veo3.1/image-to-video",
+    "durations": [
+      4,
+      6,
+      8
+    ],
+    "ratios": [
+      "16:9",
+      "9:16"
+    ],
+    "resolutions": [
+      "720p",
+      "1080p"
+    ],
+    "defaultDuration": 8
+  },
+  {
+    "id": "veo-fast",
+    "label": "Google Veo 3.1 Fast",
+    "family": "veo",
+    "textModel": "fal-ai/veo3.1/fast",
+    "imageModel": "fal-ai/veo3.1/fast/image-to-video",
+    "durations": [
+      4,
+      6,
+      8
+    ],
+    "ratios": [
+      "16:9",
+      "9:16"
+    ],
+    "resolutions": [
+      "720p",
+      "1080p"
+    ],
+    "defaultDuration": 8
+  },
+  {
+    "id": "wan",
+    "label": "Wan 2.6",
+    "family": "wan",
+    "textModel": "wan/v2.6/text-to-video",
+    "imageModel": "wan/v2.6/image-to-video",
+    "durations": [
+      5,
+      10,
+      15
+    ],
+    "ratios": [
+      "16:9",
+      "9:16",
+      "1:1",
+      "4:3",
+      "3:4"
+    ],
+    "resolutions": [
+      "720p",
+      "1080p"
+    ],
+    "defaultDuration": 5
+  },
+  {
+    "id": "h3-max",
+    "label": "MiniMax H3 Max",
+    "family": "h3",
+    "textModel": "minimax/h3-max/text-to-video",
+    "imageModel": "minimax/h3-max/image-to-video",
+    "durations": [
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15
+    ],
+    "ratios": [
+      "21:9",
+      "16:9",
+      "4:3",
+      "1:1",
+      "3:4",
+      "9:16"
+    ],
+    "resolutions": [
+      "480P",
+      "768P",
+      "1080P"
+    ],
+    "defaultDuration": 5
+  }
+]

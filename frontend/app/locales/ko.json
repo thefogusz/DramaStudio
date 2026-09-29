@@ -271,7 +271,7 @@
       "desc": "먼저 추천 템플릿으로 설정을 만들고, 서비스 유형별로 미세 조정합니다. 워크벤치에서 화를 생성할 때 선택한 이미지·영상 기능이 고정됩니다.",
       "quickTitle": "fal video setup",
       "recommended": "추천",
-      "quickDesc": "Use fal API Key for Kling 2.6 Pro video. Create scripts and images with Codex in chat.",
+      "allowedDurations": "Set shot duration to {values} seconds before generation.", "modelSelectionHint": "Select models and save. Leave the key blank to reuse the saved key.", "selectModelRequired": "Select at least one video model.", "quickDesc": "Use one fal key and select video models. Codex creates scripts and images in chat.",
       "getKey": "Get a key at fal.ai",
       "applyQuick": "Save fal Key",
       "manualTitle": "수동 템플릿",

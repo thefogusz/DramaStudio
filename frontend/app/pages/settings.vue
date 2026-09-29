@@ -99,18 +99,16 @@
               </button>
             </div>
             <div class="huobao-quick-models">
-              <div v-for="q in falQuickConfigs" :key="q.name" class="hqm-row">
-                <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
-                <span class="hqm-provider">
-                  <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
-                  {{ q.provider }}
-                </span>
-                <span class="hqm-models mono">
-                  <span v-for="(m, i) in q.model" :key="m" :class="['hqm-model', { 'is-default': i === 0 }]">
-                    {{ m }}<em v-if="i === 0">{{ t('common.default') }}</em>
-                  </span>
-                </span>
-              </div>
+              <p>{{ t('settings.ai.modelSelectionHint') }}</p>
+              <label v-for="m in falModels" :key="m.id" class="hqm-row">
+                <input v-model="falEnabled" type="checkbox" :value="m.id" />
+                <strong>{{ m.label }}</strong><span>{{ m.durations.join(', ') }}s</span>
+              </label>
+              <label>{{ t('settings.ai.currentDefault') }}
+                <select v-model="falDefault" class="input">
+                  <option v-for="m in falModels.filter(m => falEnabled.includes(m.id))" :key="m.id" :value="m.id">{{ m.label }}</option>
+                </select>
+              </label>
             </div>
           </section>
           <section class="card setup-panel">
@@ -672,6 +670,7 @@
 </template>
 
 <script setup>
+import falModels from "../../../shared/fal-video-models.json"
 import { styleLabel, styleDescription } from '~/composables/styleLabels'
 import { Plus, Pencil, Trash2, FileText, ChevronDown, Check, Loader2, Bot, Cpu, Sparkles, Palette, ExternalLink, Star, HardDrive, Database, RefreshCw, Download, Languages, SunMoon, X } from 'lucide-vue-next'
 import BaseSelect from '~/components/BaseSelect.vue'
@@ -756,9 +755,11 @@ const providerPresets = {
     minimax: { label: 'MiniMax H3', baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
   },
 }
-const falQuickConfigs = [
-  { service_type: 'video', provider: 'fal', name: 'fal · Kling 2.6 Pro', base_url: 'https://queue.fal.run', model: ['fal-ai/kling-video/v2.6/pro/text-to-video', 'fal-ai/kling-video/v2.6/pro/image-to-video'], priority: 101 },
-]
+const falEnabled = ref(['kling'])
+const falDefault = ref('kling')
+const savedFal = computed(() => [...cfgs.value].filter(c => c.provider === 'fal' && c.service_type === 'video' && c.base_url === 'https://queue.fal.run').sort((a,b) => (b.priority || 0) - (a.priority || 0))[0])
+watch(falEnabled, ids => { if (!ids.includes(falDefault.value)) falDefault.value = ids[0] || '' })
+
 
 function byType(t) { return cfgs.value.filter(c => c.service_type === t) }
 function countActive(t) { return byType(t).filter(c => c.is_active).length }
@@ -777,7 +778,7 @@ function applyProviderPreset(type, provider) {
   cfgForm.name = `${preset.label}-${type}`
 }
 
-async function loadCfgs() { try { cfgs.value = await aiConfigAPI.list() } catch (e) { toastError(e) } }
+async function loadCfgs() { try { cfgs.value = await aiConfigAPI.list(); if (savedFal.value) { const ms = savedFal.value.model || []; falEnabled.value = falModels.filter(m => ms.includes(m.textModel) || ms.includes(m.imageModel)).map(m => m.id); falDefault.value = falModels.find(m => m.textModel === ms[0] || m.imageModel === ms[0])?.id || falEnabled.value[0] || '' } } catch (e) { toastError(e) } }
 
 // ===== 默认模型选择 =====
 // 默认解析规则与工作台/后端一致：启用配置中优先级最高者的模型列表首位
@@ -815,16 +816,15 @@ async function toggleCfg(c) { await aiConfigAPI.update(c.id, { is_active: !c.is_
 async function delCfg(id) { await aiConfigAPI.del(id); toast.success(t('index.deleted')); loadCfgs() }
 async function applyFalQuickConfig() {
   const apiKey = falApiKey.value.trim()
-  if (!apiKey) { toast.warning(t('settings.ai.apiKeyRequired')); return }
+  if (!apiKey && !savedFal.value) { toast.warning(t('settings.ai.apiKeyRequired')); return }
   falSaving.value = true
   try {
-    for (const preset of falQuickConfigs) {
-      const priority = Math.max(0, ...cfgs.value.filter(c => c.service_type === 'video').map(c => c.priority || 0)) + 1
-      const payload = { ...preset, priority, api_key: apiKey }
-      const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
-      if (existing) await aiConfigAPI.update(existing.id, { ...payload, is_active: true })
-      else await aiConfigAPI.create(payload)
-    }
+    const selected = falModels.filter(m => falEnabled.value.includes(m.id))
+    if (!selected.length) { toast.warning(t('settings.ai.selectModelRequired')); return }
+    selected.sort((a,b) => Number(b.id === falDefault.value) - Number(a.id === falDefault.value))
+    const payload = { service_type: 'video', provider: 'fal', name: 'fal · Video', base_url: 'https://queue.fal.run', model: selected.flatMap(m => [m.textModel, m.imageModel]), priority: Math.max(0, ...cfgs.value.filter(c => c.service_type === 'video').map(c => c.priority || 0)) + 1, ...(apiKey ? { api_key: apiKey } : {}) }
+    if (savedFal.value) await aiConfigAPI.update(savedFal.value.id, { ...payload, is_active: true })
+    else await aiConfigAPI.create(payload)
     toast.success(t('settings.ai.quickApplied'))
     falApiKey.value = ''
     await loadCfgs()

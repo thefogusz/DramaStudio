@@ -5,7 +5,8 @@
 1. เปิด **ตั้งค่า → บริการ AI ผ่าน API**
 2. สร้าง key ที่ https://fal.ai/dashboard/keys แล้วกรอกในช่อง **fal API Key**
 3. กด **บันทึก fal Key** ระบบจะสร้างหรืออัปเดตบริการวิดีโอ fal โดยไม่สร้างงานที่ใช้เครดิต
-4. ใช้ Kling 2.6 Pro แบบข้อความ หรือภาพเริ่มต้นของช็อตที่ Codex นำเข้า
+4. ติ๊กโมเดลที่ต้องการและเลือกโมเดลเริ่มต้น แล้วบันทึก ตัวเลือกที่ติ๊กจะปรากฏในหน้าสร้างวิดีโอ
+5. หากมีคีย์แล้ว เว้นช่องคีย์ว่างเพื่อใช้คีย์เดิม เปลี่ยนตัวเลือกได้โดยไม่ต้องกรอกใหม่
 
 รองรับ `fal-ai/kling-video/v2.6/pro/text-to-video` และ `fal-ai/kling-video/v2.6/pro/image-to-video` ความยาว 5 หรือ 10 วินาที เมื่อมีภาพเริ่มต้นของช็อต ระบบเลือก image-to-video ให้โดยอัตโนมัติ ภาพอ้างอิงเป็นภาพช็อต ไม่ใช่ภาพตัวละครหรือฉากแยกหลายภาพ
 
@@ -18,3 +19,15 @@
 อ้างอิง: https://fal.ai/docs/documentation/model-apis/inference/queue และ https://fal.ai/models/fal-ai/kling-video/v2.6/pro/image-to-video/api
 
 ตรวจด้วย `npm run typecheck` ใน backend, `node --import tsx --test tests/fal.test.ts`, และ `npm run generate` ใน frontend การทดสอบใช้ mock ไม่ใช้คีย์หรือเครดิตจริง
+
+
+## โมเดลที่เปิดใช้ได้
+
+- Kling 2.6 Pro: 5, 10 วินาที
+- Google Veo 3.1 / Fast: 4, 6, 8 วินาที; 720p / 1080p
+- Wan 2.6: 5, 10, 15 วินาที; 720p / 1080p
+- MiniMax H3 Max (รุ่นปรับแต่งโดย fal): 5–15 วินาที; ช่อง 720p ส่งเป็น 768P, ช่อง 1080p ส่งเป็น 1080P latent refinement ตาม schema
+
+ทุกโมเดลใช้ข้อความหรือภาพเริ่มต้นหนึ่งภาพ ระบบเลือก image-to-video อัตโนมัติเมื่อมีภาพ ไม่รองรับเสียง/วิดีโออ้างอิงหรือภาพท้ายในตัวเชื่อมต่อนี้ H3 สร้างเสียงในตัว ไม่ส่งสวิตช์ generate_audio ที่ schema ไม่รองรับ การเปลี่ยนโมเดลไม่ปรับความยาวช็อตอัตโนมัติ: ตั้งความยาวให้ตรงรุ่นก่อนสร้าง
+
+อ้างอิงเพิ่มเติม: https://fal.ai/models/minimax/h3-max/text-to-video/api, https://fal.ai/models/fal-ai/veo3.1/api, https://fal.ai/models/wan/v2.6/text-to-video/api

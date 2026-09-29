@@ -1,4 +1,10 @@
 import type { AIConfig, ProviderRequest, VideoProviderAdapter, VideoGenerationRecord } from './types'
+import models from '../../../../shared/fal-video-models.json'
+
+export const FAL_VIDEO_MODELS = models
+export function falModelInfo(model: string) {
+  return models.find(item => item.textModel === model || item.imageModel === model)
+}
 
 export const FAL_VIDEO_MODEL = 'fal-ai/kling-video/v2.6/pro/text-to-video'
 
@@ -79,22 +85,37 @@ export class FalVideoAdapter implements VideoProviderAdapter {
   resolvePollResult = fetchFalResult
   buildGenerateRequest(config: AIConfig, record: VideoGenerationRecord) {
     let model = record.model || config.model || FAL_VIDEO_MODEL
-    const imageModel = FAL_VIDEO_MODEL.replace('text-to-video', 'image-to-video')
-    if (![FAL_VIDEO_MODEL, imageModel].includes(model)) throw new Error('fal วิดีโอรองรับ Kling 2.6 Pro')
+    const info = falModelInfo(model)
+    if (!info) throw new Error('fal รองรับ Kling 2.6 Pro, Veo 3.1, Veo 3.1 Fast Wan 2.6 และ MiniMax H3 Max')
     const images = refs(record.referenceImageUrls)
     const image = record.imageUrl || record.firstFrameUrl || images[0]
     if (images.length > 1 || record.lastFrameUrl || refs(record.referenceVideoUrls).length || refs(record.referenceAudioUrls).length || record.referenceFileUrl || record.referenceLinkUrl) {
-      throw new Error('Kling 2.6 รองรับภาพเริ่มต้น 1 ภาพ ไม่มีภาพท้าย วิดีโอ หรือเสียงอ้างอิง')
+      throw new Error(`${info.label} รองรับภาพเริ่มต้น 1 ภาพ ไม่มีภาพท้าย วิดีโอ หรือเสียงอ้างอิงในระบบนี้`)
     }
-    if (image) model = imageModel
-    if (model === imageModel && !image) throw new Error('Kling Image to Video ต้องมีภาพเริ่มต้น')
-    const duration = record.duration ?? 5
-    if (![5, 10].includes(duration)) throw new Error('Kling 2.6 รองรับความยาว 5 หรือ 10 วินาที')
+    if (image) model = info.imageModel
+    if (model === info.imageModel && !image) throw new Error(`${info.label} Image to Video ต้องมีภาพเริ่มต้น`)
+    const duration = record.duration ?? info.defaultDuration
+    if (!info.durations.includes(duration)) throw new Error(`${info.label} รองรับความยาว ${info.durations.join(', ')} วินาที`)
     const ratio = record.aspectRatio || '16:9'
-    if (!['16:9', '9:16', '1:1'].includes(ratio)) throw new Error('Kling รองรับสัดส่วน 16:9, 9:16 หรือ 1:1')
-    return submit(config, model, { prompt: record.prompt, duration: String(duration),
-      generate_audio: record.generateAudio !== false && record.generateAudio !== 0,
-      ...(image ? { image_url: image } : { aspect_ratio: ratio }) })
+    if (!info.ratios.includes(ratio)) throw new Error(`${info.label} รองรับสัดส่วน ${info.ratios.join(', ')}`)
+    const body: Record<string, unknown> = { prompt: record.prompt, duration: info.family === 'h3' ? duration : info.family === 'veo' ? `${duration}s` : String(duration) }
+    if (image) body.image_url = image
+    if (!image || info.family === 'veo') body.aspect_ratio = ratio
+    if (info.family === 'kling' || info.family === 'veo') body.generate_audio = record.generateAudio !== false && record.generateAudio !== 0
+    if (info.resolutions.length) {
+      const raw = record.resolution || '720p'
+      const resolution = info.family === 'h3' ? ({ '480p': '480P', '720p': '768P', '1080p': '1080P' }[raw] || raw) : raw
+      if (!info.resolutions.includes(resolution)) throw new Error(`${info.label} รองรับความละเอียด ${info.resolutions.join(', ')}`)
+      body.resolution = resolution
+    }
+    if (info.family === 'h3') body.prompt_expansion_mode = 'disabled'
+    if (info.family === 'wan') {
+      if ((record.prompt || '').length > 1500) throw new Error('Wan รองรับคำสั่งไม่เกิน 1500 ตัวอักษร')
+      body.multi_shots = false
+      body.enable_prompt_expansion = false
+    }
+    if (record.seed != null && info.family !== 'kling') body.seed = record.seed
+    return submit(config, model, body)
   }
   parseGenerateResponse = queued
   buildPollRequest(config: AIConfig, taskId: string) { return tracking(config, taskId, 'status') }

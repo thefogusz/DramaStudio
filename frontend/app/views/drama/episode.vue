@@ -1428,6 +1428,7 @@
 </template>
 
 <script setup>
+import falModels from "../../../../shared/fal-video-models.json"
 import { toast } from 'vue-sonner'
 import { useI18n } from 'vue-i18n'
 import {
@@ -2036,10 +2037,12 @@ const RESOLUTION_TIERS = {
   volcengine: ['480p', '720p'],
   minimax: ['720p', '1080p'],
   aliyun: ['480p', '720p', '1080p'],
+  fal: ['720p', '1080p'],
 }
 const RESOLUTION_DISPLAY = {
   volcengine: { '480p': '480p', '720p': '720p', '1080p': '720p' },
   minimax: { '480p': '768P', '720p': '768P', '1080p': '2K' },
+  fal: { '720p': '720p / H3: 768P', '1080p': '1080p' },
   aliyun: { '480p': '480P', '720p': '720P', '1080p': '1080P' },
 }
 const resolutionProvider = computed(() => RESOLUTION_TIERS[selectedVideoConfig.value?.provider] ? selectedVideoConfig.value.provider : 'volcengine')
@@ -3257,6 +3260,14 @@ function uploadAssetImage(kind, id) {
 }
 
 async function genVid(sb, opts = {}) {
+  if (selectedVideoConfig.value?.provider === 'fal') {
+    const model = bareModelName(videoModel.value) || selectedVideoConfig.value?.model?.[0]
+    const info = falModels.find(m => m.textModel === model || m.imageModel === model)
+    if (info && !info.durations.includes(Number(sb.duration || 10))) {
+      toast.error(`${info.label}: ${t('settings.ai.allowedDurations', { values: info.durations.join(', ') })}`)
+      return
+    }
+  }
   const referenceImages = getShotReferenceImages(sb)
   // 参考素材完全来自分镜绑定的角色/场景/道具图片
   const params = {

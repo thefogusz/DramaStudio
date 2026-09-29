@@ -271,7 +271,7 @@
       "desc": "先用推荐模板快速落配置，再按服务类型微调。工作台创建集时会锁定所选图片和视频能力。",
       "quickTitle": "fal video setup",
       "recommended": "推荐",
-      "quickDesc": "Use fal API Key for Kling 2.6 Pro video. Create scripts and images with Codex in chat.",
+      "allowedDurations": "Set shot duration to {values} seconds before generation.", "modelSelectionHint": "Select models and save. Leave the key blank to reuse the saved key.", "selectModelRequired": "Select at least one video model.", "quickDesc": "Use one fal key and select video models. Codex creates scripts and images in chat.",
       "getKey": "Get a key at fal.ai",
       "applyQuick": "Save fal Key",
       "manualTitle": "手动模板",

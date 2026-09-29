@@ -4,7 +4,7 @@ import { db, getInsertId, schema } from '../db/index.js'
 import { success, notFound, created, badRequest, now } from '../utils/response.js'
 import { toSnakeCase } from '../utils/transform.js'
 import { joinProviderUrl } from '../services/adapters/url.js'
-import { FAL_VIDEO_MODEL, FalVideoAdapter } from '../services/adapters/fal.js'
+import { FAL_VIDEO_MODEL, falModelInfo } from '../services/adapters/fal.js'
 import { isOfficialProvider, parseConfigTemperature } from '../services/ai.js'
 import { redactUrl, logTaskError, logTaskProgress, logTaskSuccess } from '../utils/task-logger.js'
 
@@ -49,8 +49,7 @@ function buildProbe(serviceType: string, provider: string, baseUrl: string, mode
 
   if (p === 'fal') {
     // Validate host/model without submitting a billable generation.
-    new FalVideoAdapter().buildGenerateRequest({ provider: p, baseUrl, apiKey: apiKey || '', model: m || FAL_VIDEO_MODEL },
-      { id: 0, prompt: 'probe', duration: 5, imageUrl: m.endsWith('image-to-video') ? 'https://example.com/probe.png' : undefined })
+    if (baseUrl.replace(/\/$/, '') !== 'https://queue.fal.run' || !falModelInfo(m || FAL_VIDEO_MODEL)) throw new Error('Invalid fal config')
     return {
       method: 'GET', url: 'https://queue.fal.run/fal-ai/kling-video/requests/00000000-0000-0000-0000-000000000000/status',
       headers: { Authorization: `Key ${apiKey || ''}` }, body: undefined,
@@ -191,7 +190,7 @@ app.post('/test', async (c) => {
   const model = Array.isArray(body.model) ? body.model[0] : body.model
   let probe: ReturnType<typeof buildProbe>
   try { probe = buildProbe(body.service_type, body.provider, body.base_url, model, body.api_key) }
-  catch { return badRequest(c, 'fal ต้องใช้โมเดล Kling 2.6 Pro และ Base URL https://queue.fal.run') }
+  catch { return badRequest(c, 'เลือกโมเดล fal ที่ระบบรองรับ และ Base URL https://queue.fal.run') }
   const probeUrl = redactUrl(probe.url)
 
   logTaskProgress('AIConfig', 'probe-start', {
