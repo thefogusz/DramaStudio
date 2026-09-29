@@ -75,6 +75,13 @@ function receipts(sqlite: Database.Database) {
 }
 type ImportResult = { drama_id: number; episode_id: number }
 
+function refreshDramaTotals(sqlite: Database.Database, dramaId: number) {
+  sqlite.prepare(`UPDATE dramas SET
+    total_episodes=(SELECT COUNT(*) FROM episodes WHERE drama_id=? AND deleted_at IS NULL),
+    total_duration=(SELECT COALESCE(SUM(duration),0) FROM episodes WHERE drama_id=? AND deleted_at IS NULL)
+    WHERE id=? AND deleted_at IS NULL`).run(dramaId, dramaId, dramaId)
+}
+
 export async function importNativePackage(sqlite: Database.Database, input: unknown, root: string, storageRoot: string): Promise<ImportResult> {
   const p = validateNativePackage(input)
   // Image bytes are part of the receipt so changed images cannot silently reuse a job.
@@ -96,7 +103,11 @@ export async function importNativePackage(sqlite: Database.Database, input: unkn
     return JSON.parse(row.result) as ImportResult
   }
   const existing = previous()
-  if (existing) return existing
+  if (existing) {
+    // Repair summaries from older bridge imports without creating another episode.
+    refreshDramaTotals(sqlite, existing.drama_id)
+    return existing
+  }
   const folder = path.join(storageRoot, 'codex', randomUUID())
   const urls = new Map<string, string>()
   try {
@@ -138,6 +149,7 @@ export async function importNativePackage(sqlite: Database.Database, input: unkn
         for (const k of new Set(props)) insert('storyboard_props', { storyboard_id: id, prop_id: assetIds.props.get(k) })
       }
       sqlite.prepare('UPDATE dramas SET updated_at=? WHERE id=?').run(ts, dramaId)
+      refreshDramaTotals(sqlite, dramaId!)
       const result = { drama_id: dramaId!, episode_id: episodeId }
       sqlite.prepare('INSERT INTO codex_native_imports VALUES(?,?,?,?)').run(p.job_id, digest, JSON.stringify(result), ts)
       return { duplicate: false, result }

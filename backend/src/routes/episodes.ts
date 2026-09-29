@@ -261,12 +261,16 @@ app.get('/:id/pipeline-status', async (c) => {
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, episodeId))
   if (!ep) return notFound(c, '剧集不存在')
 
-  const chars = await db.select().from(schema.characters).where(eq(schema.characters.dramaId, ep.dramaId))
-  const scenes = await db.select().from(schema.scenes).where(eq(schema.scenes.dramaId, ep.dramaId))
-  const sbs = await db.select().from(schema.storyboards).where(eq(schema.storyboards.episodeId, episodeId))
+  const chars = await db.select({ id: schema.characters.id }).from(schema.characters)
+    .innerJoin(schema.episodeCharacters, eq(schema.episodeCharacters.characterId, schema.characters.id))
+    .where(and(eq(schema.episodeCharacters.episodeId, episodeId), isNull(schema.characters.deletedAt)))
+  const scenes = await db.select({ id: schema.scenes.id }).from(schema.scenes)
+    .innerJoin(schema.episodeScenes, eq(schema.episodeScenes.sceneId, schema.scenes.id))
+    .where(and(eq(schema.episodeScenes.episodeId, episodeId), isNull(schema.scenes.deletedAt)))
+  const sbs = await db.select().from(schema.storyboards).where(and(eq(schema.storyboards.episodeId, episodeId), isNull(schema.storyboards.deletedAt)))
   const merges = await db.select().from(schema.videoMerges).where(eq(schema.videoMerges.episodeId, episodeId))
 
-  const sbsWithImage = sbs.filter(s => s.composedImage)
+  const sbsWithImage = sbs.filter(s => s.firstFrameImage || s.composedImage)
   const sbsWithVideo = sbs.filter(s => s.videoUrl)
   const latestMerge = merges[merges.length - 1]
 
