@@ -83,7 +83,7 @@
 
 ## 5. หน้าที่ Agent และสกิล
 
-Director (เพิ่ม agent_type: director):
+Director (ขยาย storyboard_breaker เดิม ไม่เพิ่ม agent_type ใหม่):
 - อ่านโจทย์ กรอบเวลา บท ตัวละคร ความต่อเนื่อง และโมเดลที่เลือก
 - สร้าง beat plan พร้อมเวลาบทพูด/การกระทำ จุดเปิด จุดพีค จุดจบ และเหตุการณ์ที่ห้ามตัด
 - ตรวจความเป็นไปได้ของกรอบเวลา ส่งปัญหาที่ต้องแก้ให้ผู้ใช้หรือ script_rewriter
@@ -163,7 +163,7 @@ Fingerprint รวม brief revision, script hash, storyboard fields, selected s
 ## 10. แผนพัฒนาเป็นขั้น
 
 1. Brief + UI เวลาต่อตอน + defaults + migration/API/context พร้อมตัวตรวจกรอบเวลา
-2. Director + คิดบทจากโจทย์ + timing estimate เชื่อม script/storyboard tools ลดกฎจำนวนตัวอักษรเดิม
+2. ขยาย script_rewriter ให้คิดบทจากโจทย์ และ storyboard_breaker ให้ทำหน้าที่ Director + timing estimate เชื่อม tools เดิม ลดกฎจำนวนตัวอักษรเดิม
 3. Preset UI + Edit plan schema + FFmpeg compiler เริ่ม standard แบบตัดตรงก่อน ให้การรวมเดิมยังทำงาน
 4. Clip evidence + Editor native + draft preview + ป้องกันตัดบทพูด
 5. preset อื่น/transition/audio/subtitles ที่มี asset พร้อมประวัติ exports
@@ -199,3 +199,22 @@ Fingerprint รวม brief revision, script hash, storyboard fields, selected s
 - โค้ดใน checkout: backend/src/agents/tools/script-tools.ts, backend/src/agents/index.ts, backend/src/agents/native-guard.ts, backend/src/services/ffmpeg-merge.ts, shared/fal-video-models.json
 - FFmpeg filter documentation: https://ffmpeg.org/ffmpeg-filters.html
 - Local skills: cinematography/SKILL.md และ video-editing/SKILL.md ที่อ่านเพื่อประเมินแนวทาง ไม่ได้ติดตั้ง dependency เพิ่ม
+
+## 13. ผลตรวจความซ้ำกับระบบเดิมและข้อปรับแบบ
+
+ตรวจ registry/tools และ endpoint debug ของ storyboard_breaker เมื่อ 2026-09-29: provider codex-cli, ภาษา th, โหลด skill storyboard-breaker จริง
+
+| ส่วนที่เสนอ | สิ่งที่มีอยู่ | แนวทางปรับ |
+| --- | --- | --- |
+| คิด/เขียนบท | script_rewriter อ่านต้นฉบับและบันทึกบทได้ | ขยายให้รับโจทย์ใหม่ + brief/เวลา ไม่เพิ่ม Writer ซ้ำ |
+| Director | storyboard_breaker จัด beat แบ่งช่วง ใส่เวลา บรรยายภาพ/อารมณ์ ผูกตัวละคร ฉาก และสร้าง video_prompt ได้ | ขยาย Agent เดิมเป็น “ผู้ช่วยกำกับและแบ่งช็อต” มีโหมดวางแผนก่อนบท และโหมดแบ่งช็อตหลังบท ใช้ ID เดิม |
+| แยกตัวละคร/ฉาก/สิ่งของ | extractor มีอยู่แล้ว | ใช้เดิมและรักษาการ dedup/ความต่อเนื่อง |
+| คำสั่งภาพ/วิดีโอ | prompt_generator มีอยู่แล้ว | ใช้เดิม อ่านเวลา/preset จาก brief ไม่แย่งหน้าที่กำกับ |
+| Editor | ยังไม่มี Agent สำหรับ EDL/ตรวจคลิปจริง | เพิ่ม editor เฉพาะงานนี้ |
+| เรนเดอร์ | ffmpeg-merge รวมคลิปและเก็บประวัติได้แล้ว | ขยาย service เดิมให้รับแผน และเก็บ output version |
+| preset | มีสไตล์ภาพ/ค่า API/encoding preset แล้ว | เพิ่ม edit presets แยกชนิด ห้ามใช้ FFmpeg -preset medium เป็นชื่อสไตล์ตัดต่อ |
+| กรอบเวลา EP | มีเวลาต่อช็อตและผลรวม ยังไม่มี production brief | เพิ่มข้อมูล/validation และส่ง context ไปยัง Agent เดิม |
+
+โหมด Director ก่อนมีบทต้องอ่าน creative_brief ได้โดยไม่บังคับให้มี screenplay และบันทึกแผนอย่างเดียว ไม่มีสิทธิ์ replace_existing ช็อต ส่วนโหมดแบ่งช็อตทำงานหลังบทพร้อม โดยใช้ tools/การป้องกัน revision เดิม แผนไม่ได้บังคับให้ทำ Director → Writer → Director หลายรอบทุกครั้ง ผู้ใช้มีบทพร้อมแล้วข้ามการวางเรื่องล่วงหน้าได้
+
+ชื่อ Director ในส่วนอื่นของเอกสารหมายถึงบทบาทที่เพิ่มให้ storyboard_breaker ไม่ใช่ Agent ใหม่ แผนพัฒนาจึงเพิ่ม Agent จริงเฉพาะ Editor นอกเหนือจาก 4 Agent เดิม
