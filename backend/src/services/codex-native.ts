@@ -153,9 +153,10 @@ export async function importNativePackage(sqlite: Database.Database, input: unkn
 export function exportNativeContext(sqlite: Database.Database, dramaId: number) {
   const drama = sqlite.prepare('SELECT * FROM dramas WHERE id=? AND deleted_at IS NULL').get(dramaId) as Record<string, any> | undefined
   if (!drama) throw new Error('Drama not found or deleted')
+  const stylePreset = sqlite.prepare('SELECT name, value, prompt, description FROM style_presets WHERE value=?').get(drama.style) || null
   const rows = (table: string) => sqlite.prepare(`SELECT * FROM ${table} WHERE drama_id=? AND deleted_at IS NULL`).all(dramaId) as Record<string, any>[]
   return {
-    version: 1, drama, characters: rows('characters'), scenes: rows('scenes'), props: rows('props'),
+    version: 1, drama, style_preset: stylePreset, characters: rows('characters'), scenes: rows('scenes'), props: rows('props'),
     episodes: rows('episodes').map(ep => ({ ...ep,
       characters: sqlite.prepare('SELECT character_id FROM episode_characters WHERE episode_id=?').all(ep.id).map((r: any) => r.character_id),
       scenes: sqlite.prepare('SELECT scene_id FROM episode_scenes WHERE episode_id=?').all(ep.id).map((r: any) => r.scene_id),

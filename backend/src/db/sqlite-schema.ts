@@ -304,6 +304,36 @@ export const sqliteSchemaStatements = [
  */
 export const stylePresetSeeds = [
   {
+    name: 'ซีรีส์สมจริง · ภาพยนตร์', value: 'cinematic-realism', sortOrder: -6,
+    prompt: 'Photographic live-action drama frame featuring fictional cast, believable human anatomy, natural skin pores and fabric texture. Use a 35mm or 50mm lens perspective with readable foreground, subject and background depth; focus on the story action rather than a posed portrait. Motivated window or practical lighting, controlled highlights, neutral skin tones, restrained film color and subtle grain. Match the established face, hairstyle, costume and lighting direction across shots. Avoid illustration, cartoon, plastic CGI skin, beauty-filter smoothing, excessive HDR and artificial lens flare.',
+    description: 'ภาพเหมือนถ่ายทำจริง เลนส์ 35–50 มม. แสงมีที่มา สีผิวธรรมชาติ เหมาะกับซีรีส์ทั่วไป',
+  },
+  {
+    name: 'ซีรีส์ไทย · ดราม่าอบอุ่น', value: 'thai-series', sortOrder: -5,
+    prompt: 'Photographic fictional Thai contemporary drama frame, expressive but restrained performance, authentic Thai location details selected for the scene, lived-in homes and believable everyday clothing. Natural 35mm environmental framing or 50mm dialogue close-up. Soft tropical daylight from a visible window, warm household practical lights at night, gentle shadow detail and neutral natural skin tones. Preserve cast identity, wardrobe and geographic continuity. Avoid tourism stereotypes, decorative cultural props without story purpose, illustration, CGI skin and exaggerated beauty retouching.',
+    description: 'ซีรีส์ไทยร่วมสมัย แสงหน้าต่างและโคมไฟ สีอบอุ่น ฉากชีวิตประจำวัน',
+  },
+  {
+    name: 'ซีรีส์เกาหลี · โรแมนติก', value: 'korean-romance', sortOrder: -4,
+    prompt: 'Photographic fictional contemporary romantic television drama frame, intimate character interaction and modern believable locations. 50mm dialogue framing or 85mm emotional close-up, soft directional window key light with gentle fill, delicate separation from the background, restrained warm highlights and cool ambient shadows. Natural textured skin, readable eyes and subtle fabric detail, controlled pastel accents and soft highlight roll-off. Keep cast identity and costume consistent. Avoid airbrushed beauty portraits, overexposed faces, cartoon proportions and waxy CGI rendering.',
+    description: 'โรแมนติกละมุน เลนส์ 50–85 มม. แสงนุ่ม สีอ่อน แต่ยังเห็นผิวและเนื้อผ้าจริง',
+  },
+  {
+    name: 'ซีรีส์สืบสวน · ระทึกขวัญ', value: 'crime-thriller', sortOrder: -3,
+    prompt: 'Photographic fictional crime-thriller drama frame, tense readable blocking in a grounded contemporary setting. 35mm perspective for environmental evidence or 85mm distance compression for observation. Low-key motivated practical light from lamps or street fixtures, selective highlights, deep but readable shadows, restrained cool shadow tones and neutral skin. Maintain spatial geography, cast identity and lighting direction across coverage. Avoid indiscriminate darkness, neon everywhere, excessive teal-orange grading, cartoon, CGI and impossible camera angles.',
+    description: 'สืบสวนเข้มข้น แสงมืดอย่างมีรายละเอียด เน้นอารมณ์กดดันและพื้นที่จริง',
+  },
+  {
+    name: 'ซีรีส์ย้อนยุค · ฟิล์มคลาสสิก', value: 'period-film', sortOrder: -2,
+    prompt: 'Photographic fictional period drama frame with wardrobe, architecture and props coherent with the specified era and location. 35mm or 50mm lens perspective, deliberate layered composition and natural human proportions. Motivated daylight or period-appropriate lamps and candles, restrained earthy colors, fine film grain and gentle highlights; preserve realistic material wear and skin detail. Maintain cast identity and costume continuity. Avoid modern objects, arbitrary historical mixtures, sepia wash, fantasy costume decoration and CGI rendering.',
+    description: 'ย้อนยุคสมจริง เสื้อผ้าและสิ่งของตรงยุค โทนดินและเกรนฟิล์มบาง ๆ',
+  },
+  {
+    name: 'สมจริง · สารคดีชีวิต', value: 'documentary-realism', sortOrder: -1,
+    prompt: 'Observational photographic frame of fictional people in a believable everyday situation, candid action and unposed body language. 28mm or 35mm lens perspective at human eye level, environmental context in readable focus, available daylight or existing practical lamps, honest exposure and restrained neutral color. Retain natural skin texture, imperfect fabric and lived-in surroundings; preserve identity and scene geography across shots. Avoid polished advertising poses, dramatic lighting without a source, glamour retouching, CGI and illustration.',
+    description: 'เป็นธรรมชาติแบบสารคดี แสงที่มีอยู่จริง มุมกล้องระดับสายตาและท่าทางไม่จัดฉาก',
+  },
+  {
     name: '3D 漫剧', value: '3d', sortOrder: 1,
     prompt: 'high-quality 3D CG animation still, modern game-engine cinematic render, Unreal Engine and Pixar grade quality, semi-realistic stylized characters with refined facial features, clean sculpted anatomy, detailed skin shader with subtle subsurface scattering, PBR materials with crisp detailed textures, volumetric cinematic lighting with soft rim light, rich depth of field, polished film color grading, detailed environment art, sharp focus, consistent character design across shots, avoid flat lighting, avoid plastic waxy skin, avoid low-poly blurry look, avoid 2D flat cel shading, avoid anime line art',
     description: '游戏引擎级 3D 渲染，半写实角色，当前短剧主流的 3D 漫剧质感',
