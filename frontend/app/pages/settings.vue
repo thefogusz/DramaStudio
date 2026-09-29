@@ -81,8 +81,12 @@
           <section class="card setup-panel">
             <h3>{{ t('nativeCodex.title') }}</h3>
             <p>{{ t('nativeCodex.description') }}</p>
-            <p role="status">{{ nativeStatus?.message || t('nativeCodex.checking') }}</p>
-            <button class="btn" :disabled="nativeChecking" @click="checkNativeCodex">{{ t('nativeCodex.check') }}</button>
+            <p role="status" aria-live="polite">{{ nativeChecking ? t('nativeCodex.checking') : nativeStatus?.message || t('nativeCodex.checking') }}</p>
+            <p v-if="nativeCheckedAt" class="dim">{{ t('nativeCodex.checkedAt', { time: nativeCheckedAt }) }}</p>
+            <button class="btn" :disabled="nativeChecking" @click="checkNativeCodex(true)">
+              <Loader2 v-if="nativeChecking" :size="14" class="animate-spin" />
+              {{ nativeChecking ? t('nativeCodex.checking') : t('nativeCodex.check') }}
+            </button>
           </section>
           <section class="card quick-card">
             <div class="quick-card-head">
@@ -373,6 +377,15 @@
                 <Plus :size="13" /> {{ t('settings.skills.add') }}
               </button>
             </div>
+
+            <section class="card setup-panel">
+              <p>{{ t('nativeCodex.agentSettingsHelp') }}</p>
+              <button class="btn" :disabled="agentChecking" @click="checkAgentSettings">
+                <Loader2 v-if="agentChecking" :size="14" class="animate-spin" />
+                {{ t('nativeCodex.checkAgent') }}
+              </button>
+              <p v-if="agentCheckResult" role="status" aria-live="polite">{{ agentCheckResult }}</p>
+            </section>
 
             <!-- Prompt 面板（子 tab 作为卡片头，与卡片同宽对齐） -->
             <div v-if="agentPane === 'prompt'" class="card agent-card">
@@ -950,6 +963,7 @@ async function resetAgentPrompt(type) {
     const cfg = await promptAPI.get(type, editLang.value)
     agentForm.system_prompt = cfg.system_prompt || ''
     agentPromptFallback.value = editLang.value !== 'zh' && !!cfg.is_default
+    agentCheckResult.value = ''
     toast.success(t('settings.agents.promptReset'))
   } catch (e) { toastError(e) }
 }
@@ -964,6 +978,7 @@ async function saveAgentCfg(type) {
     }, editLang.value)
     await loadAgents()
     agentPromptFallback.value = false
+    agentCheckResult.value = ''
     agentSaved.value = type
     toast.success(t('settings.agents.saved', { agent: agentDefs.value.find(a => a.type === type)?.label }))
     setTimeout(() => { if (agentSaved.value === type) agentSaved.value = null }, 3000)
@@ -1117,6 +1132,7 @@ async function saveSkill(id) {
     await skillsAPI.update(id, skillContent.value, editLang.value)
     await loadAllSkills()
     skillContentFallback.value = false
+    agentCheckResult.value = ''
     skillSaved.value = id
     toast.success(t('common.saved'))
     setTimeout(() => { if (skillSaved.value === id) skillSaved.value = null }, 3000)
@@ -1207,11 +1223,34 @@ async function saveStyle() {
 }
 
 const nativeStatus = ref(null)
+const agentChecking = ref(false)
+const agentCheckResult = ref('')
+watch(selectedAgent, () => { agentCheckResult.value = '' })
+async function checkAgentSettings() {
+  agentChecking.value = true
+  agentCheckResult.value = ''
+  const type = selectedAgent.value
+  try {
+    const result = await api.get(`/agent/${type}/debug`)
+    if (selectedAgent.value === type) agentCheckResult.value = t('nativeCodex.agentLoaded', { lang: result.language, n: result.loaded_skills.length, chars: result.instructions_length })
+    toast.success(t('nativeCodex.agentVerified'))
+  } catch (error) { toastError(error) }
+  finally { agentChecking.value = false }
+}
 const nativeChecking = ref(false)
-async function checkNativeCodex() {
+const nativeCheckedAt = ref('')
+async function checkNativeCodex(notify = false) {
+  if (nativeChecking.value) return
   nativeChecking.value = true
-  try { nativeStatus.value = await api.get('/agent/native/status') }
-  catch (error) { toastError(error) }
+  try {
+    nativeStatus.value = await api.get('/agent/native/status')
+    nativeCheckedAt.value = new Date().toLocaleTimeString(locale.value)
+    if (notify) {
+      if (nativeStatus.value.available && nativeStatus.value.authenticated) toast.success(t('nativeCodex.connected'))
+      else toast.error(nativeStatus.value.message)
+    }
+  }
+  catch (error) { nativeStatus.value = { available: false, authenticated: false, message: t('nativeCodex.checkFailed') }; toastError(error) }
   finally { nativeChecking.value = false }
 }
 onMounted(() => { checkNativeCodex(); loadCfgs(); loadAgents(); loadAllSkills(); loadAgentPrompt(selectedAgent.value); loadStylePresets() })

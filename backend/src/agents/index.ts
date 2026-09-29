@@ -164,10 +164,8 @@ const AGENT_TOOLS: Record<string, Record<string, any>> = {
 
 /** instructions 按请求解析：prompt 文件（或默认）+ 技能全文拼接 + 目标语言指令块
  *  prompt/skill 文本随内容语言切换语言变体（<type>.<lang>.md / SKILL.<lang>.md），缺失回退中文版 */
-function buildInstructions(type: string) {
-  return async ({ requestContext }: { requestContext?: RequestContext }) => {
+export async function resolveAgentInstructions(type: string, lang?: string | null) {
     const defaults = DEFAULT_PROMPTS[type]
-    const lang = getContentLanguageFromRC(requestContext)
     const promptFile = await loadAgentPromptFile(type, lang)
     const baseInstructions = promptFile?.instructions || defaults.instructions
     const skillInstructions = await loadAgentSkills(type, lang)
@@ -175,7 +173,10 @@ function buildInstructions(type: string) {
     return [baseInstructions, skillInstructions, languageDirective]
       .filter(Boolean)
       .join('\n\n')
-  }
+}
+
+function buildInstructions(type: string) {
+  return ({ requestContext }: { requestContext?: RequestContext }) => resolveAgentInstructions(type, getContentLanguageFromRC(requestContext))
 }
 
 /** Every text workflow uses Codex CLI; legacy LLM model/config overrides are ignored. */

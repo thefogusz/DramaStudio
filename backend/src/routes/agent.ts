@@ -2,7 +2,9 @@
  * Agent 聊天路由 — 非流式版本
  */
 import { Hono } from 'hono'
-import { validAgentTypes } from '../agents/index.js'
+import { validAgentTypes, resolveAgentInstructions } from '../agents/index.js'
+import { getContentLanguage } from '../services/app-settings.js'
+import { createHash } from 'node:crypto'
 import { buildAgentRequestContext } from '../agents/context.js'
 import { mastra } from '../mastra/index.js'
 import { codexStatus } from '../services/codex-text.js'
@@ -113,7 +115,12 @@ app.post('/:type/chat', async (c) => {
 app.get('/:type/debug', async (c) => {
   const agentType = c.req.param('type')
   if (!validAgentTypes.includes(agentType)) return badRequest(c, '无效的 Agent 类型')
-  return success(c, { agent_type: agentType, valid: true })
+  const language = getContentLanguage()
+  const instructions = await resolveAgentInstructions(agentType, language)
+  return success(c, { agent_type: agentType, valid: true, provider: 'codex-cli', language,
+    instructions_length: instructions.length, instructions_hash: createHash('sha256').update(instructions).digest('hex'),
+    loaded_skills: [...instructions.matchAll(/^## Skill: (.+)$/gm)].map(match => match[1]),
+    checked_at: new Date().toISOString(), message: 'โหลดคำสั่งและทักษะที่ Agent ใช้กับ Codex แล้ว' })
 })
 
 export default app

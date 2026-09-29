@@ -963,6 +963,13 @@
     "description": "Writing, extraction, storyboards and prompts use Codex CLI signed in with ChatGPT. No LLM API key is needed. Codex chat and native imports remain available.",
     "check": "Check connection",
     "checking": "Checking Codex…",
-    "working": "Codex is working. Please wait."
+    "working": "Codex is working. Please wait.",
+    "checkedAt": "最終確認 {time}",
+    "connected": "Codex 接続済み · ChatGPT ログイン済み",
+    "checkFailed": "接続確認に失敗しました。再試行してください。",
+    "agentSettingsHelp": "保存済みのシステム指示とスキルを選択中の Codex Agent が使用します。4つの処理はエピソードデータとキューを共有します。",
+    "checkAgent": "使用中の Agent 設定を確認",
+    "agentLoaded": "Codex · 言語 {lang} · スキル {n} 件 · 指示 {chars} 文字",
+    "agentVerified": "保存済みの Agent 設定を確認しました"
   }
 }

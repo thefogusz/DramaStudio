@@ -963,6 +963,13 @@
     "description": "Writing, extraction, storyboards and prompts use Codex CLI signed in with ChatGPT. No LLM API key is needed. Codex chat and native imports remain available.",
     "check": "Check connection",
     "checking": "Checking Codex…",
-    "working": "Codex is working. Please wait."
+    "working": "Codex is working. Please wait.",
+    "checkedAt": "上次检查 {time}",
+    "connected": "Codex 已连接 · 已登录 ChatGPT",
+    "checkFailed": "连接检查失败，请重试",
+    "agentSettingsHelp": "已保存的系统提示词和技能供所选 Codex Agent 使用。四个流程共享剧集数据和原生任务队列。",
+    "checkAgent": "检查 Agent 实际设置",
+    "agentLoaded": "Codex · 语言 {lang} · {n} 个技能 · {chars} 字符指令",
+    "agentVerified": "已验证保存的 Agent 设置"
   }
 }

@@ -113,6 +113,23 @@ for consistency after a script edit. Shot prompts can be edited in Huobao normal
 
 ## Verified on 2026-09-29
 
+### Connection and agent settings checks
+
+The connection button now shows progress, a notification after a manual check,
+and the time of the last successful check. This verifies the local CLI and
+ChatGPT login; it does not run a paid generation or test quota availability.
+Settings also exposes a read-only check of the selected agent's saved effective
+instructions: content language, loaded skill IDs, instruction size and hash.
+`GET /agent/:type/debug` uses the same resolver as the running Mastra agents.
+Unsaved editor changes are not included. Existing image prompts are reused until
+the user requests a prompt rewrite.
+
+The settings regression test uses an isolated database/workspace, saves and
+edits Thai prompts/skills through the actual settings routes, then checks the
+actual four registered agents' instructions and model. All four resolve to
+`codex-cli` even with legacy paid-model overrides; edits load without restart.
+Current app checks returned skill counts 1 / 1 / 1 / 4 and Thai output language.
+
 ### Native image buttons
 
 Character, scene, prop, and bound storyboard image requests now use the locally

@@ -963,6 +963,13 @@
     "description": "Writing, extraction, storyboards and prompts use Codex CLI signed in with ChatGPT. No LLM API key is needed. Codex chat and native imports remain available.",
     "check": "Check connection",
     "checking": "Checking Codex…",
-    "working": "Codex is working. Please wait."
+    "working": "Codex is working. Please wait.",
+    "checkedAt": "Last checked {time}",
+    "connected": "Codex connected · ChatGPT account signed in",
+    "checkFailed": "Connection check failed. Please retry.",
+    "agentSettingsHelp": "Saved System Prompts and Skills apply to the selected Codex agent. All four workflows share episode data and the native job queue.",
+    "checkAgent": "Check active agent settings",
+    "agentLoaded": "Codex · language {lang} · {n} skills · {chars} instruction characters",
+    "agentVerified": "Saved agent settings verified"
   }
 }
