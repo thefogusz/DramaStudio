@@ -1967,9 +1967,9 @@ function videoTaskStatusLabel(sb) {
 
 function videoTaskActionLabel(sb) {
   const state = videoTaskState(sb)
-  if (state === 'done') return t('episode.asset.regen')
-  if (state === 'pending') return t('episode.asset.generating')
-  return t('episode.asset.generate')
+  if (state === 'done') return t('episode.vid.regenerateVideo')
+  if (state === 'pending') return t('episode.vid.generating')
+  return t('episode.vid.generateVideo')
 }
 
 const allVideoTaskRows = computed(() => sbs.value.map((sb, index) => {

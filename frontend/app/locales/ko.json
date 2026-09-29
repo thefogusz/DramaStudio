@@ -731,7 +731,7 @@
       "emptyNoVideo": "영상이 아직 생성되지 않았습니다",
       "emptyGeneratingDesc": "생성이 완료되면 여기서 미리 볼 수 있습니다",
       "emptyNoVideoDesc": "아래 버튼으로 이 스토리보드의 영상을 생성합니다",
-      "generateVideo": "영상 생성",
+      "generateVideo": "영상 생성", "regenerateVideo": "영상 다시 생성",
       "history": "영상 기록",
       "current": "현재",
       "deleteRecord": "이 기록 삭제",

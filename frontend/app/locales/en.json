@@ -731,7 +731,7 @@
       "emptyNoVideo": "No video generated yet",
       "emptyGeneratingDesc": "Once generated, it can be previewed here",
       "emptyNoVideoDesc": "Click the button below to generate a video for this shot",
-      "generateVideo": "Generate Video",
+      "generateVideo": "Generate Video", "regenerateVideo": "Regenerate Video",
       "history": "Video History",
       "current": "Current",
       "deleteRecord": "Delete this record",
