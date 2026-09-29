@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "job_id": "thai-demo-001",
+  "drama": { "title": "จดหมายในคืนฝนตก", "style": "3d", "aspect_ratio": "9:16" },
+  "episode": { "title": "จดหมาย", "script": "ฉาก 1 — ห้องนอน กลางคืน\nไหมเปิดจดหมายเก่าที่พบในลิ้นชัก\nไหม: ทำไมแม่ไม่เคยบอกฉัน?" },
+  "characters": [{ "key": "mai", "name": "ไหม", "appearance": "หญิงไทยวัย 25 ปี ผมประบ่า เสื้อสีน้ำเงิน", "prompt": "Stylized 3D adult Thai woman, shoulder length hair, blue shirt, character reference sheet" }],
+  "scenes": [{ "key": "bedroom", "location": "ห้องนอน", "time": "กลางคืน", "prompt": "Stylized 3D bedroom at night, rain on window, warm desk lamp" }],
+  "props": [{ "key": "letter", "name": "จดหมาย", "prompt": "An old cream paper letter in a stylized 3D film" }],
+  "shots": [{ "title": "พบจดหมาย", "duration": 5, "scene": "bedroom", "characters": ["mai"], "props": ["letter"], "image_prompt": "Mai opening an old letter at her desk, warm lamp, rainy night, stylized 3D, vertical 9:16", "video_prompt": "Slow push in as Mai opens the letter and looks surprised" }]
+}

@@ -1,5 +1,8 @@
 # 🎬 Huobao Drama - AI Short Drama Generation Platform
 
+Local Codex workflow (no text/image API key required for importing native work):
+[Codex native production guide](docs/CODEX_NATIVE.md).
+
 <div align="center">
 
 **A full-stack TypeScript platform for automated AI short-drama production**

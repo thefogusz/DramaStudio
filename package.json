@@ -8,6 +8,8 @@
     "dev:frontend": "cd frontend && npm run dev",
     "dev:desktop": "cd desktop && npm run dev",
     "build:frontend": "cd frontend && npm run generate",
-    "dist": "cd desktop && npm run dist"
+    "dist": "cd desktop && npm run dist",
+    "native": "cd backend && npm run native --",
+    "test:native": "cd backend && npm run test:native"
   }
 }

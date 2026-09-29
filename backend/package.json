@@ -8,7 +8,9 @@
     "start": "tsx src/index.ts",
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "backfill-artwork": "tsx scripts/backfill-artwork.ts"
+    "backfill-artwork": "tsx scripts/backfill-artwork.ts",
+    "native": "tsx scripts/codex-native.ts",
+    "test:native": "node --import tsx --test tests/codex-native.test.ts"
   },
   "keywords": [],
   "author": "",
