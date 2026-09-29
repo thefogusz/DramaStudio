@@ -922,5 +922,35 @@
         "desc": "이 \"?\" 버튼으로 이 페이지의 가이드를 다시 재생할 수 있습니다. 즐거운 제작 되세요!"
       }
     }
-  }
+  },
+  "preflight": {
+  "eyebrow": "Images before video",
+  "title": "Review images and script",
+  "intro": "Review every shot, cast and script before configuring video generation",
+  "loading": "Loading...",
+  "episode": "Episode",
+  "guides": "Composition guides",
+  "workbench": "Open video workbench",
+  "setup": "Configure API key",
+  "shots": "shots",
+  "stop": "This page reviews images and script. It submits no video job.",
+  "audioNote": "Speech, lip sync and captions must be checked after video generation. Written dialogue is not generated audio.",
+  "noKey": "No enabled video service with a key. Review images first and add your key when ready.",
+  "storyboard": "All shots in story order",
+  "fullImage": "Open full image",
+  "noImage": "No shot image yet",
+  "imageError": "This image could not load",
+  "ratioError": "This image is not vertical 9:16",
+  "videoPrompt": "View video prompt",
+  "missingPrompt": "No video prompt yet",
+  "assets": "Cast, locations and props",
+  "script": "Full script and audio plan",
+  "noEpisode": "This project has no episode",
+  "vertical": "Vertical 9:16 project",
+  "timeCheck": "{n} seconds, within one minute",
+  "scriptCheck": "Full script present",
+  "imageCheck": "Vertical images loaded: {n}/{total}",
+  "promptCheck": "Video prompt for every shot",
+  "assetCheck": "Reference images for cast, scenes and props"
+}
 }

@@ -15,6 +15,7 @@ export default defineNuxtConfig({
     // （方括号路径在 git/shell 中需转义，且部分部署环境不兼容）。URL 保持不变。
     'pages:extend'(pages) {
       pages.push(
+        { name: 'drama-preflight', path: '/drama/:id/preflight', file: fileURLToPath(new URL('./app/views/drama/preflight.vue', import.meta.url)) },
         {
           name: 'drama-detail',
           path: '/drama/:id',

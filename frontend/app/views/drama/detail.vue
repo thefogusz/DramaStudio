@@ -35,6 +35,7 @@
 
     <!-- 主 Tab：剧集列表 / 素材库 -->
     <nav class="page-tabs">
+      <NuxtLink :to="`/drama/${drama.id}/preflight`" class="tab-btn">{{ t('preflight.title') }}</NuxtLink>
       <button type="button" :class="['tab-btn', { on: activeTab === 'episodes' }]" @click="activeTab = 'episodes'">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.5"/><line x1="7" y1="8" x2="7" y2="16"/><line x1="10" y1="8" x2="10" y2="16"/><line x1="13" y1="8" x2="13" y2="16"/><line x1="16" y1="8" x2="16" y2="16"/></svg>
         {{ t('detail.tabs.episodes') }}
