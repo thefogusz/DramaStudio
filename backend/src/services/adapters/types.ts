@@ -46,6 +46,7 @@ export interface ImageProviderAdapter {
  * 视频生成 Provider Adapter 接口
  */
 export interface VideoProviderAdapter {
+  resolvePollResult?(config: AIConfig, taskId: string, status: any): Promise<any>
   provider: string
 
   buildGenerateRequest(config: AIConfig, record: VideoGenerationRecord): ProviderRequest

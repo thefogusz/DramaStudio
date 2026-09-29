@@ -4,6 +4,7 @@ import { db, getInsertId, schema } from '../db/index.js'
 import { success, notFound, created, badRequest, now } from '../utils/response.js'
 import { toSnakeCase } from '../utils/transform.js'
 import { joinProviderUrl } from '../services/adapters/url.js'
+import { FAL_VIDEO_MODEL, FalVideoAdapter } from '../services/adapters/fal.js'
 import { isOfficialProvider, parseConfigTemperature } from '../services/ai.js'
 import { redactUrl, logTaskError, logTaskProgress, logTaskSuccess } from '../utils/task-logger.js'
 
@@ -45,6 +46,16 @@ function geminiHeaders(apiKey?: string, withJson = false) {
 function buildProbe(serviceType: string, provider: string, baseUrl: string, model?: string, apiKey?: string) {
   const p = provider.toLowerCase()
   const m = model || ''
+
+  if (p === 'fal') {
+    // Validate host/model without submitting a billable generation.
+    new FalVideoAdapter().buildGenerateRequest({ provider: p, baseUrl, apiKey: apiKey || '', model: m || FAL_VIDEO_MODEL },
+      { id: 0, prompt: 'probe', duration: 5, imageUrl: m.endsWith('image-to-video') ? 'https://example.com/probe.png' : undefined })
+    return {
+      method: 'GET', url: 'https://queue.fal.run/fal-ai/kling-video/requests/00000000-0000-0000-0000-000000000000/status',
+      headers: { Authorization: `Key ${apiKey || ''}` }, body: undefined,
+    }
+  }
 
   if (p === 'gemini') {
     // 探针统一走 generateContent:文本运行时(AI SDK)走的就是它,官方与中转站都支持;
@@ -178,7 +189,9 @@ app.post('/test', async (c) => {
   }
 
   const model = Array.isArray(body.model) ? body.model[0] : body.model
-  const probe = buildProbe(body.service_type, body.provider, body.base_url, model, body.api_key)
+  let probe: ReturnType<typeof buildProbe>
+  try { probe = buildProbe(body.service_type, body.provider, body.base_url, model, body.api_key) }
+  catch { return badRequest(c, 'fal ต้องใช้โมเดล Kling 2.6 Pro และ Base URL https://queue.fal.run') }
   const probeUrl = redactUrl(probe.url)
 
   logTaskProgress('AIConfig', 'probe-start', {
@@ -193,9 +206,11 @@ app.post('/test', async (c) => {
       method: probe.method,
       headers: probe.headers,
       body: probe.body ? JSON.stringify(probe.body) : undefined,
+      redirect: body.provider.toLowerCase() === 'fal' ? 'error' : 'follow',
     })
     const text = await resp.text()
-    const reachable = [200, 204, 400, 401, 403].includes(resp.status)
+    const isFal = body.provider.toLowerCase() === 'fal'
+    const reachable = [200, 204, 400, 401, 403].includes(resp.status) || (isFal && resp.status === 404)
     const payload = {
       ok: resp.ok,
       reachable,
@@ -203,7 +218,9 @@ app.post('/test', async (c) => {
       status_text: resp.statusText,
       method: probe.method,
       url: probeUrl,
-      message: reachable
+      message: isFal
+        ? 'ทดสอบเฉพาะการเข้าถึง fal โดยไม่สร้างงานหรือใช้เครดิต สถานะ 404 ไม่ได้ยืนยันสิทธิ์ของ key; 401/403 หมายถึงไม่ได้รับอนุญาต'
+        : reachable
         ? (resp.ok ? '端点可访问，认证与路径基本正常' : '端点已响应，请根据状态码判断认证或路径是否正确')
         : '端点未按预期响应，请检查 Base URL 和代理前缀',
       response_preview: text.slice(0, 240),

@@ -268,6 +268,7 @@ async function processTask(id: number, config: AIConfig) {
       method,
       headers,
       body: isMultipart ? (body as FormData) : JSON.stringify(body),
+      redirect: config.provider === 'fal' ? 'error' : 'follow',
       signal: AbortSignal.timeout(600_000),
     })
 
@@ -362,10 +363,18 @@ async function pollTask(record: SysTaskRecord, config: AIConfig, taskId: string)
       const resp = await fetch(url, {
         method,
         headers,
+        redirect: config.provider === 'fal' ? 'error' : 'follow',
         signal: AbortSignal.timeout(remainingMs),
       })
-      if (!resp.ok) continue
-      const result = await resp.json() as any
+      if (!resp.ok) {
+        if (adapter.provider === 'fal' && resp.status >= 400 && resp.status < 500 && resp.status !== 429) {
+          await failTask(record.id, `fal queue HTTP ${resp.status}`)
+          return
+        }
+        continue
+      }
+      let result = await resp.json() as any
+      if ('resolvePollResult' in adapter && adapter.resolvePollResult) result = await adapter.resolvePollResult(config, taskId, result)
 
       // 图片/视频 PollResponse 结构不同，这里统一按 any 取值后按 type 分支
       const pollResp: any = adapter.parsePollResponse(result)

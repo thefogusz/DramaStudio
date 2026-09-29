@@ -85,21 +85,21 @@
             </div>
             <p class="setup-desc">
               {{ t('settings.ai.quickDesc') }}
-              <a class="huobao-site-link" href="https://api.firemux.com" target="_blank" rel="noopener noreferrer">
+              <a class="huobao-site-link" href="https://fal.ai/dashboard/keys" target="_blank" rel="noopener noreferrer">
                 {{ t('settings.ai.getKey') }}
                 <ExternalLink :size="12" :stroke-width="1.8" />
               </a>
             </p>
             <div class="huobao-quick-row">
-              <input v-model="huobaoApiKey" class="input" type="password" placeholder="Huobao API Key" />
-              <button class="btn btn-primary" :disabled="huobaoSaving" @click="applyHuobaoQuickConfig">
-                <Loader2 v-if="huobaoSaving" :size="13" class="animate-spin" />
+              <input v-model="falApiKey" class="input" type="password" placeholder="fal API Key" />
+              <button class="btn btn-primary" :disabled="falSaving" @click="applyFalQuickConfig">
+                <Loader2 v-if="falSaving" :size="13" class="animate-spin" />
                 <Sparkles v-else :size="13" />
                 {{ t('settings.ai.applyQuick') }}
               </button>
             </div>
             <div class="huobao-quick-models">
-              <div v-for="q in huobaoQuickConfigs" :key="q.name" class="hqm-row">
+              <div v-for="q in falQuickConfigs" :key="q.name" class="hqm-row">
                 <span class="hqm-label">{{ serviceMeta[q.service_type].label }}</span>
                 <span class="hqm-provider">
                   <img v-if="providerIconUrl(q.provider)" :src="providerIconUrl(q.provider)" class="hqm-provider-icon" alt="" />
@@ -705,8 +705,8 @@ const cfgDialog = ref(false)
 const cfgEditId = ref(null)
 const cfgTesting = ref(false)
 const cfgTestResult = ref(null)
-const huobaoApiKey = ref('')
-const huobaoSaving = ref(false)
+const falApiKey = ref('')
+const falSaving = ref(false)
 const cfgForm = reactive({ name: '', provider: '', api_key: '', base_url: '', models: [], service_type: 'text', priority: 0, temperature: '' })
 // 模型标签编辑器：首位即默认模型；输入框支持回车添加、逗号/换行批量粘贴
 const modelInput = ref('')
@@ -731,12 +731,10 @@ function pinModelTop(i) {
 }
 // 服务类型 label/desc 渲染时求值（语言切换即时生效），type 为逻辑值
 const serviceTypes = computed(() => [
-  { type: 'text', label: t('common.serviceType.text') },
-  { type: 'image', label: t('common.serviceType.image') },
   { type: 'video', label: t('common.serviceType.video') },
 ])
-const providers = ['gemini', 'openai', 'volcengine', 'minimax', 'aliyun']
-const providerSelectOptions = computed(() => providers.map(p => ({ label: p, value: p })))
+const providers = ['gemini', 'openai', 'volcengine', 'minimax', 'aliyun', 'fal']
+const providerSelectOptions = computed(() => providers.filter(p => p !== 'fal' || cfgForm.service_type === 'video').map(p => ({ label: p, value: p })))
 const serviceMeta = computed(() => ({
   text: { label: t('common.serviceType.text'), desc: t('settings.ai.meta.text') },
   image: { label: t('common.serviceType.image'), desc: t('settings.ai.meta.image') },
@@ -752,19 +750,14 @@ const providerPresets = {
     openai: { label: 'OpenAI', baseUrl: 'https://api.openai.com', models: ['gpt-image-2'] },
   },
   video: {
+    fal: { label: 'fal · Kling 2.6 Pro', baseUrl: 'https://queue.fal.run', models: ['fal-ai/kling-video/v2.6/pro/text-to-video', 'fal-ai/kling-video/v2.6/pro/image-to-video'] },
     aliyun: { label: 'Alibaba Cloud · Wan 3.0', baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
     volcengine: { label: 'Seedance 2.0', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
     minimax: { label: 'MiniMax H3', baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
   },
 }
-const huobaoQuickConfigs = [
-  { service_type: 'text', provider: 'gemini', name: 'Huobao Text · Gemini', base_url: 'https://api.firemux.com', model: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'], priority: 101 },
-  { service_type: 'text', provider: 'openai', name: 'Huobao Text · OpenAI', base_url: 'https://api.firemux.com', model: ['deepseek-v4-pro', 'deepseek-v4-flash', 'gpt-5.6-terra'], priority: 100 },
-  { service_type: 'image', provider: 'openai', name: 'Huobao Image · OpenAI', base_url: 'https://api.firemux.com', model: ['gpt-image-2'], priority: 99 },
-  { service_type: 'image', provider: 'gemini', name: 'Huobao Image · Gemini', base_url: 'https://api.firemux.com', model: ['gemini-3-pro-image', 'gemini-3.1-flash-image'], priority: 97 },
-  { service_type: 'video', provider: 'aliyun', name: 'Huobao Video · Wan 3.0', base_url: 'https://api.firemux.com/qwen', model: ['wan3.0-video', 'wan3.0-video-prime'], priority: 97 },
-  { service_type: 'video', provider: 'volcengine', name: 'Huobao Video · Seedance', base_url: 'https://api.firemux.com/volcengine', model: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'], priority: 96 },
-  { service_type: 'video', provider: 'minimax', name: 'Huobao Video · MiniMax', base_url: 'https://api.firemux.com/minimax', model: ['MiniMax-H3'], priority: 98 },
+const falQuickConfigs = [
+  { service_type: 'video', provider: 'fal', name: 'fal · Kling 2.6 Pro', base_url: 'https://queue.fal.run', model: ['fal-ai/kling-video/v2.6/pro/text-to-video', 'fal-ai/kling-video/v2.6/pro/image-to-video'], priority: 101 },
 ]
 
 function byType(t) { return cfgs.value.filter(c => c.service_type === t) }
@@ -820,24 +813,25 @@ async function setDefaultModel(type, c, m) {
 }
 async function toggleCfg(c) { await aiConfigAPI.update(c.id, { is_active: !c.is_active }); loadCfgs() }
 async function delCfg(id) { await aiConfigAPI.del(id); toast.success(t('index.deleted')); loadCfgs() }
-async function applyHuobaoQuickConfig() {
-  const apiKey = huobaoApiKey.value.trim()
+async function applyFalQuickConfig() {
+  const apiKey = falApiKey.value.trim()
   if (!apiKey) { toast.warning(t('settings.ai.apiKeyRequired')); return }
-  huobaoSaving.value = true
+  falSaving.value = true
   try {
-    for (const preset of huobaoQuickConfigs) {
-      const payload = { ...preset, api_key: apiKey }
+    for (const preset of falQuickConfigs) {
+      const priority = Math.max(0, ...cfgs.value.filter(c => c.service_type === 'video').map(c => c.priority || 0)) + 1
+      const payload = { ...preset, priority, api_key: apiKey }
       const existing = cfgs.value.find(c => c.name === preset.name || (c.service_type === preset.service_type && c.provider === preset.provider && c.base_url === preset.base_url))
-      if (existing) await aiConfigAPI.update(existing.id, payload)
+      if (existing) await aiConfigAPI.update(existing.id, { ...payload, is_active: true })
       else await aiConfigAPI.create(payload)
     }
     toast.success(t('settings.ai.quickApplied'))
-    huobaoApiKey.value = ''
+    falApiKey.value = ''
     await loadCfgs()
   } catch (e) {
     toastError(e)
   } finally {
-    huobaoSaving.value = false
+    falSaving.value = false
   }
 }
 function startAddCfg(t) {

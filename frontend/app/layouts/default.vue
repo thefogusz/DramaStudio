@@ -78,7 +78,7 @@ async function checkAiConfigs() {
     const configs = await aiConfigAPI.list()
     const labels = SERVICE_TYPE_LABELS.value
     missingConfigLabels.value = Object.entries(labels)
-      .filter(([type]) => !configs.some(c => c.service_type === type && c.is_active))
+      .filter(([type]) => type === 'video' && !configs.some(c => c.service_type === type && c.is_active))
       .map(([, label]) => label)
   } catch { /* 配置检查失败不阻塞页面 */ }
 }

@@ -269,11 +269,11 @@
     "ai": {
       "title": "AI 服务配置",
       "desc": "先用推荐模板快速落配置，再按服务类型微调。工作台创建集时会锁定所选图片和视频能力。",
-      "quickTitle": "火宝快捷配置",
+      "quickTitle": "fal video setup",
       "recommended": "推荐",
-      "quickDesc": "输入 Huobao API Key，一次写入文本、图片、视频三条推荐配置。",
-      "getKey": "前往 api.firemux.com 获取 Key",
-      "applyQuick": "写入火宝配置",
+      "quickDesc": "Use fal API Key for Kling 2.6 Pro video. Create scripts and images with Codex in chat.",
+      "getKey": "Get a key at fal.ai",
+      "applyQuick": "Save fal Key",
       "manualTitle": "手动模板",
       "manualDesc": "选择服务类型后，直接用模板填充推荐的 `provider / base URL / model`。",
       "activeCount": "{n} 已启用",
@@ -283,8 +283,8 @@
       "setDefault": "设为该类型默认模型",
       "noBaseUrl": "未设置 Base URL",
       "test": "测试",
-      "apiKeyRequired": "请填写 Huobao API Key",
-      "quickApplied": "火宝快捷配置已写入",
+      "apiKeyRequired": "Enter fal API Key first",
+      "quickApplied": "fal video configured",
       "defaultModelSwitched": "默认{type}模型已切换为 {model}",
       "meta": {
         "text": "剧本改写、角色场景提取、分镜拆解等 Agent 文本能力",
@@ -887,13 +887,13 @@
       },
       "settings": {
         "title": "第 1 步 · 配置 AI 服务",
-        "desc": "所有 AI 功能都要先配置。点这里进「设置」页，粘贴 Huobao API Key 一键完成文本/图片/视频三条配置。"
+        "desc": "Enter fal API Key for videos. Use Codex chat for scripts and images."
       }
     },
     "settings": {
       "quick": {
         "title": "最快上手：快捷配置",
-        "desc": "粘贴 Huobao API Key，一键写入文本、图片、视频三条推荐配置，支持连通性测试。"
+        "desc": "Enter fal API Key for videos. Use Codex chat for scripts and images."
       },
       "nav": {
         "title": "全部配置都在这",
