@@ -81,7 +81,7 @@
           <section class="card setup-panel">
             <h3>{{ t('nativeCodex.title') }}</h3>
             <p>{{ t('nativeCodex.description') }}</p>
-            <p role="status" aria-live="polite">{{ nativeChecking ? t('nativeCodex.checking') : nativeStatus?.message || t('nativeCodex.checking') }}</p>
+            <p role="status" aria-live="polite">{{ nativeChecking ? t('nativeCodex.checking') : nativeStatus?.available && nativeStatus?.authenticated ? 'เชื่อมต่อแล้ว · Codex CLI พร้อมใช้และเข้าสู่ระบบ ChatGPT แล้ว' : nativeStatus?.message || t('nativeCodex.checking') }}</p>
             <p v-if="nativeCheckedAt" class="dim">{{ t('nativeCodex.checkedAt', { time: nativeCheckedAt }) }}</p>
             <button class="btn" :disabled="nativeChecking" @click="checkNativeCodex(true)">
               <Loader2 v-if="nativeChecking" :size="14" class="animate-spin" />
@@ -704,7 +704,7 @@ import { providerIconUrl } from '~/composables/useProviderIcon'
 import { startTour, autoTour } from '~/composables/useTour'
 import { confirmUnifiedLanguage } from '~/composables/useUnifiedLanguage'
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 
 const showBrandImage = ref(true)
 const tab = ref('ai')
