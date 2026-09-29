@@ -4542,23 +4542,25 @@ onMounted(() => setTimeout(() => autoTour('episode', EPISODE_TOUR, t), 900))
   left: 7px;
   display: inline-flex;
   align-items: center;
-  padding: 2px 7px;
+  padding: 3px 9px;
+  border: 1px solid #4b596c;
   border-radius: 999px;
-  background: rgba(255,255,255,0.85);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-  color: var(--text-2);
-  font-size: 9.5px;
+  background: #263241;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.16);
+  color: #f1f5f9;
+  font-size: 11px;
+  line-height: 1.4;
   font-weight: 700;
 }
 .asset-cover-badge.is-ready {
-  background: var(--success-bg);
-  color: var(--tag-success-text);
+  background: #123e2a;
+  border-color: #397450;
+  color: #9cf0bd;
 }
 .asset-cover-badge.is-pending {
-  background: var(--accent-bg);
-  color: var(--accent-text);
+  background: #49331f;
+  border-color: #8c613d;
+  color: #ffd0a2;
 }
 .asset-cover-empty { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-3); }
 .asset-body {
