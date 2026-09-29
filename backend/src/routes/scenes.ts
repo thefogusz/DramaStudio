@@ -72,6 +72,7 @@ app.post('/:id/generate-image', async (c) => {
   if (!body.episode_id) return badRequest(c, 'episode_id 必填')
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, Number(body.episode_id)))
   if (!ep) return badRequest(c, '剧集不存在')
+  if (scene.dramaId !== ep.dramaId) return badRequest(c, 'รายการนี้ไม่ได้อยู่ในเรื่องของตอนที่เลือก')
 
   const stylePrompt = await getDramaStylePrompt(scene.dramaId)
   const finalPrompt = await ensureSceneFinalPrompt(scene, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
@@ -87,7 +88,7 @@ app.post('/:id/generate-image', async (c) => {
   try {
     logTaskStart('SceneImage', 'generate', { sceneId: id, episodeId: ep.id, dramaId: scene.dramaId, location: scene.location })
     await db.update(schema.scenes).set({ status: 'processing', updatedAt: now() }).where(eq(schema.scenes.id, id))
-    const genId = await generateImage({ sceneId: id, dramaId: scene.dramaId, prompt, model: body.model, configId: body.config_id ?? ep.imageConfigId ?? undefined })
+    const genId = await generateImage({ sceneId: id, dramaId: scene.dramaId, prompt, referenceImages: scene.imageUrl ? [scene.imageUrl] : [], model: body.model, configId: body.config_id ?? ep.imageConfigId ?? undefined })
     logTaskSuccess('SceneImage', 'generate', { sceneId: id, generationId: genId })
     return success(c, { image_generation_id: genId })
   } catch (err: any) {
@@ -107,6 +108,7 @@ app.post('/:id/generate-prompt', async (c) => {
 
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, Number(body.episode_id)))
   if (!ep) return badRequest(c, '剧集不存在')
+  if (scene.dramaId !== ep.dramaId) return badRequest(c, 'รายการนี้ไม่ได้อยู่ในเรื่องของตอนที่เลือก')
 
   logTaskStart('FinalPrompt', 'scene-generate', { sceneId: id, episodeId: ep.id, force: !!body.force })
   const finalPrompt = await ensureSceneFinalPrompt(scene, ep.id, !!body.force, { model: body.text_model, configId: body.text_config_id ?? undefined })

@@ -87,13 +87,14 @@ app.post('/:id/generate-image', async (c) => {
 
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, Number(body.episode_id)))
   if (!ep) return badRequest(c, '剧集不存在')
+  if (char.dramaId !== ep.dramaId) return badRequest(c, 'รายการนี้ไม่ได้อยู่ในเรื่องของตอนที่เลือก')
 
   const stylePrompt = await getDramaStylePrompt(char.dramaId)
   const finalPrompt = await ensureCharacterFinalPrompt(char, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
   const prompt = finalPrompt || characterImagePrompt(char, stylePrompt)
   try {
     logTaskStart('CharacterImage', 'generate', { characterId: id, episodeId: ep.id, dramaId: char.dramaId })
-    const genId = await generateImage({ characterId: id, dramaId: char.dramaId, prompt, model: body.model, size: CHARACTER_IMAGE_SIZE, configId: body.config_id ?? ep.imageConfigId ?? undefined })
+    const genId = await generateImage({ characterId: id, dramaId: char.dramaId, prompt, size: CHARACTER_IMAGE_SIZE, referenceImages: char.imageUrl ? [char.imageUrl] : [] })
     logTaskSuccess('CharacterImage', 'generate', { characterId: id, generationId: genId })
     return success(c, { image_generation_id: genId })
   } catch (err: any) {
@@ -112,6 +113,7 @@ app.post('/:id/generate-prompt', async (c) => {
 
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, Number(body.episode_id)))
   if (!ep) return badRequest(c, '剧集不存在')
+  if (char.dramaId !== ep.dramaId) return badRequest(c, 'รายการนี้ไม่ได้อยู่ในเรื่องของตอนที่เลือก')
 
   logTaskStart('FinalPrompt', 'character-generate', { characterId: id, episodeId: ep.id, force: !!body.force })
   const finalPrompt = await ensureCharacterFinalPrompt(char, ep.id, !!body.force, { model: body.text_model, configId: body.text_config_id ?? undefined })
@@ -134,7 +136,7 @@ app.post('/batch-generate-images', async (c) => {
   const stylePrompt = await getDramaStylePrompt(ep.dramaId)
   for (const cid of ids) {
     const [char] = await db.select().from(schema.characters).where(eq(schema.characters.id, cid))
-    if (!char) continue
+    if (!char || char.deletedAt || char.dramaId !== ep.dramaId) continue
     const finalPrompt = await ensureCharacterFinalPrompt(char, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
     const prompt = finalPrompt || characterImagePrompt(char, stylePrompt)
     try {

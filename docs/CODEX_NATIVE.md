@@ -113,6 +113,33 @@ for consistency after a script edit. Shot prompts can be edited in Huobao normal
 
 ## Verified on 2026-09-29
 
+### Native image buttons
+
+Character, scene, prop, and bound storyboard image requests now use the locally
+installed Codex CLI with ChatGPT login. No image-provider API key is required.
+The worker explicitly enables native image generation and its code-mode host;
+the existing text worker continues to disable image generation.
+Jobs appear in the app's task list as provider `codex` and run serially with
+native text workflows. A completed, decoded image is attached to the target
+automatically. Existing images stay visible until success. Duplicate requests
+for a running target share one task. Target edits/deletion during generation
+prevent automatic overwrite. Restarted jobs are marked failed and can be retried.
+
+Native image availability and limits depend on the installed Codex/account.
+The worker reports an error if the tool is unavailable; it does not fall back
+to a paid image API. References must be app-owned local images. Test coverage:
+`backend/tests/codex-image.test.ts`. Video generation still uses the configured
+video provider and its key.
+
+Verified with the running app on 2026-09-29: POST to the character image endpoint
+created a native task, generated a real three-view character PNG using a local
+identity reference, and saved it back to the asset in about two minutes with no
+image API configurations. The PNG served successfully through ports 3013 and
+5679. The temporary test character was removed; the eight EP1 shots were preserved.
+The combined native/video/pipeline suite passed 28 tests, Thai locale tests passed
+2 tests, and the frontend production build passed. Browser clicking was not
+verified in this run.
+
 Native episodes can now be created before adding image or video provider keys.
 Provider configuration is required when requesting paid media generation.
 The app's native storyboard writer stores episode and drama durations in seconds,

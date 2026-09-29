@@ -1260,7 +1260,7 @@
                 :disabled="isPendingCharImage(assetDetail.item.id)"
                 @click="genCharImg(assetDetail.item.id)"
               >
-                {{ assetImageSrc(assetDetail.item) ? t('episode.asset.regenPortrait') : (isPendingCharImage(assetDetail.item.id) ? t('episode.asset.generating') : t('episode.asset.genPortrait')) }}
+                {{ isPendingCharImage(assetDetail.item.id) ? t('episode.asset.generating') : (assetImageSrc(assetDetail.item) ? t('episode.asset.regenPortrait') : t('episode.asset.genPortrait')) }} · Codex
               </button>
               <button
                 v-else-if="assetDetail.type === 'scene'"
@@ -1268,7 +1268,7 @@
                 :disabled="isPendingSceneImage(assetDetail.item.id)"
                 @click="genSceneImg(assetDetail.item.id)"
               >
-                {{ assetImageSrc(assetDetail.item) ? t('episode.asset.regenScene') : (isPendingSceneImage(assetDetail.item.id) ? t('episode.asset.generating') : t('episode.asset.genScene')) }}
+                {{ isPendingSceneImage(assetDetail.item.id) ? t('episode.asset.generating') : (assetImageSrc(assetDetail.item) ? t('episode.asset.regenScene') : t('episode.asset.genScene')) }} · Codex
               </button>
               <button
                 v-else-if="assetDetail.type === 'prop'"
@@ -1276,7 +1276,7 @@
                 :disabled="isPendingPropImage(assetDetail.item.id)"
                 @click="genPropImg(assetDetail.item.id)"
               >
-                {{ assetImageSrc(assetDetail.item) ? t('episode.asset.regenProp') : (isPendingPropImage(assetDetail.item.id) ? t('episode.asset.generating') : t('episode.asset.genProp')) }}
+                {{ isPendingPropImage(assetDetail.item.id) ? t('episode.asset.generating') : (assetImageSrc(assetDetail.item) ? t('episode.asset.regenProp') : t('episode.asset.genProp')) }} · Codex
               </button>
               <button class="btn btn-primary" :disabled="savingAssetDetail" @click="saveAssetDetail">
                 <Loader2 v-if="savingAssetDetail" :size="12" class="animate-spin" />
@@ -2202,9 +2202,19 @@ const videoModelMultiCfg = computed(() => hasMultiConfigs(videoModelOptions.valu
 async function loadGenTasks() {
   if (!epId.value) return
   try {
+    const previousImages = new Set(genTasks.value.filter(task => task.type === 'image' && task.status === 'processing').map(task => task.id))
     const data = await taskAPI.listByEpisode(epId.value)
     genTasks.value = data?.tasks || []
     genMerges.value = data?.merges || []
+    const images = genTasks.value.filter(task => task.type === 'image')
+    for (const [field, pendingRef] of [['character_id', pendingCharImageIds], ['scene_id', pendingSceneImageIds], ['prop_id', pendingPropImageIds]]) {
+      const latest = new Map()
+      for (const task of images) if (task[field] && (!latest.has(task[field]) || task.id > latest.get(task[field]).id)) latest.set(task[field], task)
+      pendingRef.value = [...new Set([...pendingRef.value.filter(id => !latest.has(id)), ...[...latest.values()].filter(task => task.status === 'processing').map(task => task[field])])]
+    }
+    const finishedImages = images.filter(task => previousImages.has(task.id) && task.status !== 'processing')
+    for (const task of finishedImages) if (task.status === 'failed') toastError(new Error(task.error_msg || t('episode.status.failed')))
+    if (finishedImages.length) void refresh()
 
     // 生成中/失败状态只存在内存里,页面刷新后丢失;从 sys_task 记录按分镜恢复,
     // 否则已失败的镜头刷新后会退化成"待生成"
@@ -2342,7 +2352,7 @@ function genTaskDuration(row) {
 // 抽屉打开且有进行中任务时,4s 轮询;关闭或全部结束时停止
 watch([taskDrawer, genTaskActiveCount], ([open, active]) => {
   stopGenTasksPolling()
-  if (open && active > 0) {
+  if (active > 0 && (open || genTasks.value.some(task => task.type === 'image' && task.status === 'processing'))) {
     genTasksTimer = setInterval(loadGenTasks, 4000)
   }
 })
@@ -2623,6 +2633,11 @@ async function refresh() {
       try { chars.value = await episodeAPI.characters(ep.id) } catch { chars.value = [] }
       try { scenes.value = await episodeAPI.scenes(ep.id) } catch { scenes.value = [] }
       try { propItems.value = await episodeAPI.props(ep.id) } catch { propItems.value = [] }
+      if (assetDetail.value?.item) {
+        const source = assetDetail.value.type === 'character' ? chars.value : assetDetail.value.type === 'scene' ? scenes.value : propItems.value
+        const current = source.find(item => item.id === assetDetail.value.item.id)
+        if (current) { assetDetail.value.item.image_url = current.image_url; assetDetail.value.item.local_path = current.local_path }
+      }
       sbs.value = await episodeAPI.storyboards(ep.id)
       selectedVideoSbIds.value = selectedVideoSbIds.value.filter(id => sbs.value.some(sb => sb.id === id))
       if (sbs.value.length) {
@@ -2888,8 +2903,7 @@ async function genCharImg(id) {
     toast.success(t('episode.image.generatingChar'))
     await refresh()
     watchAsyncResult(() => {
-      const char = chars.value.find(c => c.id === id)
-      const done = !!(char?.image_url || char?.imageUrl)
+      const done = !isPendingCharImage(id)
       if (done) pendingCharImageIds.value = pendingCharImageIds.value.filter(item => item !== id)
       return done
     })
@@ -2930,8 +2944,7 @@ async function genSceneImg(id) {
     toast.success(t('episode.image.generatingScene'))
     await refresh()
     watchAsyncResult(() => {
-      const scene = scenes.value.find(s => s.id === id)
-      const done = !!(scene?.image_url || scene?.imageUrl)
+      const done = !isPendingSceneImage(id)
       if (done) pendingSceneImageIds.value = pendingSceneImageIds.value.filter(item => item !== id)
       return done
     })
@@ -2957,8 +2970,7 @@ async function genPropImg(id) {
     toast.success(t('episode.image.generatingProp'))
     await refresh()
     watchAsyncResult(() => {
-      const prop = propItems.value.find(p => p.id === id)
-      const done = !!(prop?.image_url || prop?.imageUrl)
+      const done = !isPendingPropImage(id)
       if (done) pendingPropImageIds.value = pendingPropImageIds.value.filter(item => item !== id)
       return done
     })

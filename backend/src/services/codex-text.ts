@@ -24,14 +24,14 @@ export function withNativeAgentJob<T>(work: () => Promise<T>): Promise<T> {
 }
 export function codexQueueStatus() { return { provider: 'codex', running: running || agentRunning, waiting: waiting + agentWaiting, message: running || agentRunning ? 'Codex กำลังทำงาน' : waiting + agentWaiting ? 'กำลังรอคิว Codex' : 'พร้อมรับงาน Codex' } }
 
-export function cli(args: string[], input = '', signal?: AbortSignal): Promise<string> {
+export function cli(args: string[], input = '', signal?: AbortSignal, timeoutMs = 300_000): Promise<string> {
   return new Promise((resolve, reject) => {
     const env = { ...process.env }
     delete env.OPENAI_API_KEY
     delete env.CODEX_API_KEY
     const child = spawn(process.env.HUOBAO_CODEX_BIN || 'codex', args, { env, shell: false, windowsHide: true, signal })
     let out = '', size = 0
-    const timer = setTimeout(() => child.kill(), 300_000)
+    const timer = setTimeout(() => child.kill(), timeoutMs)
     child.stdout.on('data', chunk => { size += chunk.length; if (size > 8_000_000) child.kill(); else out += chunk })
     // Provider stderr can contain credentials or source text; do not return it to clients.
     if (args[0] === 'login' && args[1] === 'status') child.stderr.on('data', chunk => { out += chunk })

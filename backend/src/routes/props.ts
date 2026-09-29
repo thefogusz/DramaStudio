@@ -89,6 +89,7 @@ app.post('/:id/generate-prompt', async (c) => {
 
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, Number(body.episode_id)))
   if (!ep) return badRequest(c, '剧集不存在')
+  if (prop.dramaId !== ep.dramaId) return badRequest(c, 'รายการนี้ไม่ได้อยู่ในเรื่องของตอนที่เลือก')
 
   logTaskStart('FinalPrompt', 'prop-generate', { propId: id, episodeId: ep.id, force: !!body.force })
   const finalPrompt = await ensurePropFinalPrompt(prop, ep.id, !!body.force, { model: body.text_model, configId: body.text_config_id ?? undefined })
@@ -110,13 +111,14 @@ app.post('/:id/generate-image', async (c) => {
 
   const [ep] = await db.select().from(schema.episodes).where(eq(schema.episodes.id, Number(body.episode_id)))
   if (!ep) return badRequest(c, '剧集不存在')
+  if (prop.dramaId !== ep.dramaId) return badRequest(c, 'รายการนี้ไม่ได้อยู่ในเรื่องของตอนที่เลือก')
 
   const stylePrompt = await getDramaStylePrompt(prop.dramaId)
   const finalPrompt = await ensurePropFinalPrompt(prop, ep.id, false, { model: body.text_model, configId: body.text_config_id ?? undefined })
   const prompt = finalPrompt || propImagePrompt(prop, stylePrompt)
   try {
     logTaskStart('PropImage', 'generate', { propId: id, episodeId: ep.id, dramaId: prop.dramaId })
-    const genId = await generateImage({ propId: id, dramaId: prop.dramaId, prompt, model: body.model, size: PROP_IMAGE_SIZE, configId: body.config_id ?? ep.imageConfigId ?? undefined })
+    const genId = await generateImage({ propId: id, dramaId: prop.dramaId, prompt, referenceImages: prop.imageUrl ? [prop.imageUrl] : [], model: body.model, size: PROP_IMAGE_SIZE, configId: body.config_id ?? ep.imageConfigId ?? undefined })
     logTaskSuccess('PropImage', 'generate', { propId: id, generationId: genId })
     return success(c, { image_generation_id: genId })
   } catch (err: any) {

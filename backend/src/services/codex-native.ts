@@ -181,17 +181,19 @@ export function exportNativeContext(sqlite: Database.Database, dramaId: number) 
   }
 }
 
-export async function attachNativeImage(sqlite: Database.Database, kind: string, id: number, source: string, storageRoot: string) {
+export async function attachNativeImage(sqlite: Database.Database, kind: string, id: number, source: string, storageRoot: string, options: { expectedUpdatedAt?: string; frameType?: string } = {}) {
   const table = ({ character: 'characters', scene: 'scenes', prop: 'props', storyboard: 'storyboards' } as Record<string, string>)[kind]
   if (!table || !Number.isSafeInteger(id) || id < 1) throw new Error('Invalid target type or id')
   const target = sqlite.prepare(`SELECT updated_at FROM ${table} WHERE id=? AND deleted_at IS NULL`).get(id) as { updated_at: string } | undefined
   if (!target) throw new Error('Target not found or deleted')
+  if (options.expectedUpdatedAt && target.updated_at !== options.expectedUpdatedAt) throw new Error('ข้อมูลถูกแก้ระหว่างสร้างภาพ กรุณาตรวจงานและลองใหม่')
   const folder = path.join(storageRoot, 'codex', randomUUID())
   try {
     const url = await saveImage(source, folder)
     const ts = new Date().toISOString()
-    const fields = kind === 'storyboard' ? 'composed_image=?, first_frame_image=?' : 'image_url=?, local_path=?'
-    const values = kind === 'storyboard' ? [url, url] : [url, url.slice(1)]
+    const frame = options.frameType === 'last_frame' ? 'last_frame_image' : 'first_frame_image'
+    const fields = kind === 'storyboard' ? (options.frameType ? `${frame}=?` : 'composed_image=?, first_frame_image=?') : 'image_url=?, local_path=?'
+    const values = kind === 'storyboard' ? (options.frameType ? [url] : [url, url]) : [url, url.slice(1)]
     const update = sqlite.prepare(`UPDATE ${table} SET ${fields}, updated_at=? ${kind === 'scene' ? ", status='completed'" : ''} WHERE id=? AND updated_at=? AND deleted_at IS NULL`).run(...values, ts, id, target.updated_at)
     if (!update.changes) throw new Error('Target changed during image processing; export context and retry')
     return { id, url }

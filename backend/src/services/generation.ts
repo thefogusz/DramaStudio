@@ -10,6 +10,7 @@ import { downloadFile, fetchImageAsCompressedDataUrl, generateImageThumb, readIm
 import { extractVideoPoster } from '../utils/video-poster.js'
 import { getImageAdapter, getVideoAdapter } from './adapters/registry'
 import type { AIConfig } from './adapters/types'
+import { generateNativeImage } from './codex-image.js'
 import { logTaskError, logTaskPayload, logTaskProgress, logTaskStart, logTaskSuccess, logTaskWarn, redactUrl } from '../utils/task-logger.js'
 
 type TaskType = 'image' | 'video'
@@ -61,41 +62,7 @@ interface GenerateVideoParams {
 }
 
 export async function generateImage(params: GenerateImageParams): Promise<number> {
-  // 指定配置（集锁定）可能已停用/删除/厂商收敛，失效时回退到当前启用配置，避免生成被旧引用卡死
-  const config = params.configId
-    ? (await getConfigById(params.configId)) ?? await getActiveConfig('image')
-    : await getActiveConfig('image')
-  if (!config) throw new Error('未配置图片模型，请先到「设置」页添加并启用 AI 服务')
-
-  const id = await createTask('image', config, {
-    storyboardId: params.storyboardId,
-    dramaId: params.dramaId,
-    sceneId: params.sceneId,
-    characterId: params.characterId,
-    propId: params.propId,
-    prompt: params.prompt,
-    model: params.model || config.model,
-  }, {
-    size: params.size || '1920x1080',
-    frameType: params.frameType,
-    referenceImages: params.referenceImages,
-  })
-
-  logTaskStart('ImageTask', 'enqueue', {
-    id,
-    provider: config.provider,
-    storyboardId: params.storyboardId,
-    sceneId: params.sceneId,
-    characterId: params.characterId,
-    frameType: params.frameType,
-    model: params.model || config.model,
-  })
-  logTaskPayload('ImageTask', 'enqueue params', {
-    id,
-    config: { provider: config.provider, model: config.model, baseUrl: config.baseUrl },
-    params,
-  })
-  return id
+  return generateNativeImage(params)
 }
 
 export async function generateVideo(params: GenerateVideoParams): Promise<number> {
