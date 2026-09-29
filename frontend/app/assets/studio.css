@@ -575,8 +575,8 @@ select.input { appearance: auto; cursor: pointer; padding-right: 14px; }
 
 /* Thai vowels and tone marks need comfortable spacing and native font support. */
 html[lang='th'] {
-  --font-body: 'Leelawadee UI', Tahoma, sans-serif;
-  --font-display: 'Leelawadee UI', Tahoma, sans-serif;
+  --font-body: 'Noto Sans Thai Variable', 'Leelawadee UI', Tahoma, sans-serif;
+  --font-display: 'Noto Sans Thai Variable', 'Leelawadee UI', Tahoma, sans-serif;
 }
 html[lang='th'] button, html[lang='th'] h1, html[lang='th'] h2, html[lang='th'] label {
   letter-spacing: normal;

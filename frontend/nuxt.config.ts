@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url'
 export default defineNuxtConfig({
   srcDir: 'app/',
   ssr: false,
+  css: ['@fontsource-variable/noto-sans-thai'],
   devtools: { enabled: false },
   experimental: {
     appManifest: false,
