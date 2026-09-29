@@ -58,3 +58,23 @@ test('legacy text config probes cannot call a paid LLM endpoint', async () => {
     assert.equal(called, false)
   } finally { globalThis.fetch = original }
 })
+
+test('native episodes can be created before adding image or video API keys', async () => {
+  const { default: episodes } = await import('../src/routes/episodes.js')
+  const response = await episodes.request('/', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ drama_id: dramaId, title: 'ตอน native', resolution: '1080p' }) })
+  assert.equal(response.status, 200)
+  const body = await response.json() as any
+  assert.equal(body.data.image_config_id, null)
+  assert.equal(body.data.video_config_id, null)
+  assert.equal(body.data.title, 'ตอน native')
+})
+
+test('native storyboard saves keep episode and drama durations in seconds', async () => {
+  const { storyboardTools } = await import('../src/agents/tools/storyboard-tools.js')
+  const requestContext = buildAgentRequestContext({ dramaId, episodeId })
+  await storyboardTools.saveStoryboards.execute!({ replace_existing: true, storyboards: Array.from({ length: 8 }, (_, i) => ({ shot_number: i + 1, duration: 5 })) }, { requestContext } as any)
+  assert.equal((db.$client.prepare('SELECT duration FROM episodes WHERE id=?').get(episodeId) as any).duration, 40)
+  const drama = db.$client.prepare('SELECT total_duration,total_episodes FROM dramas WHERE id=?').get(dramaId) as any
+  assert.equal(drama.total_duration, 40)
+  assert.equal(drama.total_episodes, 3)
+})

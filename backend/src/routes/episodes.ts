@@ -17,8 +17,8 @@ app.post('/', async (c) => {
   // 图片/视频配置：显式传入优先，缺省时自动锁定当前启用的最高优先级官方配置
   const imageConfigId = body.image_config_id ?? await getActiveConfigId('image')
   const videoConfigId = body.video_config_id ?? await getActiveConfigId('video')
-  if (!imageConfigId) return badRequest(c, '未找到启用的图片生成配置，请先在设置中心添加')
-  if (!videoConfigId) return badRequest(c, '未找到启用的视频生成配置，请先在设置中心添加')
+  // Native writing and attached images do not require a paid media provider.
+  // Validate provider configuration only when generation is requested.
   const ts = now()
 
   // Get next episode number（忽略已软删的集，删除中间集后新集号可复用空位之后的最大值）
@@ -30,7 +30,7 @@ app.post('/', async (c) => {
   const res = await db.insert(schema.episodes).values({
     dramaId: body.drama_id,
     episodeNumber: nextNum,
-    title: body.title || `第${nextNum}集`,
+    title: body.title || `ตอนที่ ${nextNum}`,
     imageConfigId,
     videoConfigId,
     // 视频分辨率在创建集时固定（480p/720p/1080p），后续可通过 PUT 修改；各视频适配器再映射为厂商档位

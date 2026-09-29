@@ -329,8 +329,16 @@ const saveStoryboards = createTool({
       .reduce((sum, sb) => sum + (sb.duration || 0), 0)
 
     await db.update(schema.episodes)
-      .set({ duration: Math.ceil(totalDuration / 60), updatedAt: ts })
+      .set({ duration: Math.ceil(totalDuration), updatedAt: ts })
       .where(eq(schema.episodes.id, episodeId))
+
+    const dramaEpisodes = (await db.select().from(schema.episodes)
+      .where(eq(schema.episodes.dramaId, dramaId))).filter(ep => !ep.deletedAt)
+    await db.update(schema.dramas).set({
+      totalEpisodes: dramaEpisodes.length,
+      totalDuration: dramaEpisodes.reduce((sum, ep) => sum + (ep.duration || 0), 0),
+      updatedAt: ts,
+    }).where(eq(schema.dramas.id, dramaId))
 
     logTaskSuccess('StoryboardTool', 'save-complete', {
       episodeId,

@@ -113,6 +113,12 @@ for consistency after a script edit. Shot prompts can be edited in Huobao normal
 
 ## Verified on 2026-09-29
 
+Native episodes can now be created before adding image or video provider keys.
+Provider configuration is required when requesting paid media generation.
+The app's native storyboard writer stores episode and drama durations in seconds,
+matching the preflight screen and local bridge (eight five-second shots = 40 seconds).
+Regression coverage is in `backend/tests/native-guard.test.ts`.
+
 - Native integration/CLI tests: 5 passed, including import retry, real image decode,
   database rollback, appending episodes, and script revision conflicts.
 - Backend typecheck and standalone CLI typecheck passed.
