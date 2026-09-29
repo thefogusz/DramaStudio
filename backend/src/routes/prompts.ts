@@ -13,7 +13,7 @@ const app = new Hono()
 const fsm = () => skillsManagerWorkspace.filesystem!
 
 const checkType = (type: string) => validAgentTypes.includes(type)
-const LANGS = ['zh', 'en', 'ja', 'ko']
+const LANGS = ['zh', 'en', 'ja', 'ko', 'th']
 const normalizeLang = (v?: string) => (v && LANGS.includes(v) ? v : 'zh')
 
 // GET /prompts — 列出全部 Agent 的 prompt 状态（基础版口径；name/model 只属于基础版）

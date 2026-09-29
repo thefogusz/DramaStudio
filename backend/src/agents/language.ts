@@ -9,6 +9,7 @@
  */
 
 const LANGUAGE_NATIVE_NAMES: Record<string, string> = {
+  th: 'ภาษาไทย (Thai)',
   en: 'English',
   ja: '日本語 (Japanese)',
   ko: '한국어 (Korean)',

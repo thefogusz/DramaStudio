@@ -198,6 +198,7 @@
 </template>
 
 <script setup>
+import { styleLabel as presetLabel, styleDescription } from '~/composables/styleLabels'
 import { toast } from 'vue-sonner'
 import { toastError } from '~/composables/useToast'
 import { useI18n } from 'vue-i18n'
@@ -223,8 +224,8 @@ const dramaToDelete = ref(null)
 const deletingDrama = ref(false)
 const form = ref({ title: '', style: '', aspect_ratio: '16:9' })
 const stylePresets = ref([])
-const styleSelectOptions = computed(() => stylePresets.value.map(p => ({ label: p.name, value: p.value })))
-const selectedStyleDesc = computed(() => stylePresets.value.find(p => p.value === form.value.style)?.description || '')
+const styleSelectOptions = computed(() => stylePresets.value.map(p => ({ label: presetLabel(p), value: p.value })))
+const selectedStyleDesc = computed(() => styleDescription(stylePresets.value.find(p => p.value === form.value.style)))
 // 常量数组 label 渲染时求值（语言切换即时生效），value 为逻辑值
 const aspectRatioOptions = computed(() => ([
   { label: t('index.ratio.landscape'), value: '16:9' },
@@ -264,7 +265,8 @@ async function setDramaStatus(d, status) {
 }
 
 function styleLabel(key) {
-  return stylePresets.value.find(p => p.value === key)?.name || key || ''
+  const preset = stylePresets.value.find(p => p.value === key)
+  return preset ? presetLabel(preset) : key || ''
 }
 
 // 封面：单色灰阶 + 首字符（状态色只以小圆点出现，封面保持中性）

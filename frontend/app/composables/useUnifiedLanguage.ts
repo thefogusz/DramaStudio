@@ -11,12 +11,10 @@ import { i18n, setUiLocale, type UiLocale } from '~/composables/i18n'
 import { settingsAPI } from '~/composables/useApi'
 import LanguageSwitchDialog from '~/components/LanguageSwitchDialog.vue'
 
-let pending: { resolve: (ok: boolean) => void } | null = null
-
 /** 弹确认框；resolve(true) = 用户确认切换 */
 function confirmDialog(lang: UiLocale): Promise<boolean> {
   return new Promise((resolve) => {
-    const langNameKeys = { zh: 'langNameZh', en: 'langNameEn', ja: 'langNameJa', ko: 'langNameKo' }
+    const langNameKeys = { zh: 'langNameZh', en: 'langNameEn', ja: 'langNameJa', ko: 'langNameKo', th: 'langNameTh' }
     const nameKey = `settings.general.${langNameKeys[lang] || 'langNameZh'}`
     const title = i18n.global.t('components.langSwitch.title', { lang: i18n.global.t(nameKey) })
     const message = i18n.global.t('components.langSwitch.message')
@@ -24,33 +22,26 @@ function confirmDialog(lang: UiLocale): Promise<boolean> {
     const open = ref(true)
     const host = document.createElement('div')
     document.body.appendChild(host)
+    const finish = (ok: boolean) => {
+      open.value = false
+      queueMicrotask(() => {
+        app.unmount()
+        host.remove()
+        resolve(ok)
+      })
+    }
     const app = createApp({
       setup: () => () => h(LanguageSwitchDialog, {
         open: open.value,
         title,
         message,
-        onConfirm: () => { open.value = false },
-        onCancel: () => { open.value = false },
+        onConfirm: () => finish(true),
+        onCancel: () => finish(false),
       }),
     })
     app.use(i18n as unknown as Parameters<typeof app.use>[0])
     app.mount(host)
 
-    pending = {
-      resolve: (ok) => {
-        app.unmount()
-        host.remove()
-        resolve(ok)
-      },
-    }
-    // open 置 false 后由 watch 关闭并 resolve —— 用简单轮询代替（弹窗体积小，不值得引 watch 复杂度）
-    const timer = setInterval(() => {
-      if (!open.value) {
-        clearInterval(timer)
-        pending?.resolve(true)
-        pending = null
-      }
-    }, 80)
   })
 }
 
@@ -59,9 +50,12 @@ let switching = false
 /** 入口：先弹确认框，确认后执行统一切换并刷新 */
 export async function confirmUnifiedLanguage(lang: UiLocale) {
   if (switching) return
-  const ok = await confirmDialog(lang)
-  if (!ok) return
   switching = true
+  const ok = await confirmDialog(lang)
+  if (!ok) {
+    switching = false
+    return
+  }
   try {
     await settingsAPI.setContentLanguage(lang)
   } catch { /* 后端失败不阻断界面切换 */ }

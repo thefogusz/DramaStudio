@@ -263,7 +263,8 @@
       "langNameEn": "英語",
       "langNameJa": "日本語",
       "langNameKo": "韓国語",
-      "unifiedSwitchWarning": "{lang} に切替しました。UI と AI コンテンツ言語が同期され、まもなく再読み込みします…"
+      "unifiedSwitchWarning": "{lang} に切替しました。UI と AI コンテンツ言語が同期され、まもなく再読み込みします…",
+      "langNameTh": "タイ語"
     },
     "ai": {
       "title": "AI サービス設定",

@@ -572,3 +572,13 @@ select.input { appearance: auto; cursor: pointer; padding-right: 14px; }
   color: var(--text-3);
 }
 .app-menu-sep { height: 1px; margin: 4px 6px; background: var(--border); }
+
+/* Thai vowels and tone marks need comfortable spacing and native font support. */
+html[lang='th'] {
+  --font-body: 'Leelawadee UI', Tahoma, sans-serif;
+  --font-display: 'Leelawadee UI', Tahoma, sans-serif;
+}
+html[lang='th'] button, html[lang='th'] h1, html[lang='th'] h2, html[lang='th'] label {
+  letter-spacing: normal;
+  line-height: 1.5;
+}

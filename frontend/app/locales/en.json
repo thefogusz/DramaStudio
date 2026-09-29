@@ -263,7 +263,8 @@
       "langNameEn": "English",
       "langNameJa": "Japanese",
       "langNameKo": "Korean",
-      "unifiedSwitchWarning": "Switched to {lang} — UI and AI content language update together. Refreshing…"
+      "unifiedSwitchWarning": "Switched to {lang} — UI and AI content language update together. Refreshing…",
+      "langNameTh": "Thai"
     },
     "ai": {
       "title": "AI Service Configs",

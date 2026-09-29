@@ -196,12 +196,12 @@
               <div class="provider-badge style-badge"><Palette :size="15" /></div>
               <div class="config-main">
                 <div class="config-line">
-                  <span class="config-name">{{ p.name }}</span>
+                  <span class="config-name">{{ styleLabel(p) }}</span>
                   <span class="tag mono">{{ p.value }}</span>
                   <span v-if="!p.is_active" class="tag">{{ t('settings.common.disabled') }}</span>
                 </div>
                 <div class="config-sub mono truncate">{{ p.prompt }}</div>
-                <div v-if="p.description" class="config-sub truncate">{{ p.description }}</div>
+                <div v-if="p.description" class="config-sub truncate">{{ styleDescription(p) }}</div>
               </div>
               <label class="config-switch">
                 <input type="checkbox" class="sr-only" :checked="p.is_active" @change="toggleStyle(p)">
@@ -672,6 +672,7 @@
 </template>
 
 <script setup>
+import { styleLabel, styleDescription } from '~/composables/styleLabels'
 import { Plus, Pencil, Trash2, FileText, ChevronDown, Check, Loader2, Bot, Cpu, Sparkles, Palette, ExternalLink, Star, HardDrive, Database, RefreshCw, Download, Languages, SunMoon, X } from 'lucide-vue-next'
 import BaseSelect from '~/components/BaseSelect.vue'
 import { toast } from 'vue-sonner'
@@ -743,27 +744,27 @@ const serviceMeta = computed(() => ({
 }))
 const providerPresets = {
   text: {
-    gemini: { label: 'Gemini 官方', baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'] },
-    openai: { label: 'OpenAI 官方', baseUrl: 'https://api.openai.com', models: ['deepseek-v4-pro', 'gpt-5.6-terra'] },
+    gemini: { label: 'Gemini', baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'] },
+    openai: { label: 'OpenAI', baseUrl: 'https://api.openai.com', models: ['deepseek-v4-pro', 'gpt-5.6-terra'] },
   },
   image: {
-    gemini: { label: 'Gemini 官方', baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3-pro-image', 'gemini-3.1-flash-image'] },
-    openai: { label: 'OpenAI 官方', baseUrl: 'https://api.openai.com', models: ['gpt-image-2'] },
+    gemini: { label: 'Gemini', baseUrl: 'https://generativelanguage.googleapis.com', models: ['gemini-3-pro-image', 'gemini-3.1-flash-image'] },
+    openai: { label: 'OpenAI', baseUrl: 'https://api.openai.com', models: ['gpt-image-2'] },
   },
   video: {
-    aliyun: { label: '阿里云百炼 Wan 3.0', baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
-    volcengine: { label: 'Seedance 2.0 官方', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
-    minimax: { label: 'MiniMax H3 官方', baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
+    aliyun: { label: 'Alibaba Cloud · Wan 3.0', baseUrl: 'https://{WorkspaceId}.cn-beijing.maas.aliyuncs.com', models: ['wan3.0-video', 'wan3.0-video-prime'] },
+    volcengine: { label: 'Seedance 2.0', baseUrl: 'https://ark.cn-beijing.volces.com', models: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'] },
+    minimax: { label: 'MiniMax H3', baseUrl: 'https://api.minimaxi.com', models: ['MiniMax-H3'] },
   },
 }
 const huobaoQuickConfigs = [
-  { service_type: 'text', provider: 'gemini', name: '火宝文本服务 · Gemini', base_url: 'https://api.firemux.com', model: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'], priority: 101 },
-  { service_type: 'text', provider: 'openai', name: '火宝文本服务 · OpenAI', base_url: 'https://api.firemux.com', model: ['deepseek-v4-pro', 'deepseek-v4-flash', 'gpt-5.6-terra'], priority: 100 },
-  { service_type: 'image', provider: 'openai', name: '火宝图片服务 · OpenAI', base_url: 'https://api.firemux.com', model: ['gpt-image-2'], priority: 99 },
-  { service_type: 'image', provider: 'gemini', name: '火宝图片服务 · Gemini', base_url: 'https://api.firemux.com', model: ['gemini-3-pro-image', 'gemini-3.1-flash-image'], priority: 97 },
-  { service_type: 'video', provider: 'aliyun', name: '火宝视频服务 · Wan 3.0', base_url: 'https://api.firemux.com/qwen', model: ['wan3.0-video', 'wan3.0-video-prime'], priority: 97 },
-  { service_type: 'video', provider: 'volcengine', name: '火宝视频服务 · Seedance', base_url: 'https://api.firemux.com/volcengine', model: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'], priority: 96 },
-  { service_type: 'video', provider: 'minimax', name: '火宝视频服务 · MiniMax', base_url: 'https://api.firemux.com/minimax', model: ['MiniMax-H3'], priority: 98 },
+  { service_type: 'text', provider: 'gemini', name: 'Huobao Text · Gemini', base_url: 'https://api.firemux.com', model: ['gemini-3.8-flash', 'gemini-3.1-pro-preview', 'gemini-3-flash-preview'], priority: 101 },
+  { service_type: 'text', provider: 'openai', name: 'Huobao Text · OpenAI', base_url: 'https://api.firemux.com', model: ['deepseek-v4-pro', 'deepseek-v4-flash', 'gpt-5.6-terra'], priority: 100 },
+  { service_type: 'image', provider: 'openai', name: 'Huobao Image · OpenAI', base_url: 'https://api.firemux.com', model: ['gpt-image-2'], priority: 99 },
+  { service_type: 'image', provider: 'gemini', name: 'Huobao Image · Gemini', base_url: 'https://api.firemux.com', model: ['gemini-3-pro-image', 'gemini-3.1-flash-image'], priority: 97 },
+  { service_type: 'video', provider: 'aliyun', name: 'Huobao Video · Wan 3.0', base_url: 'https://api.firemux.com/qwen', model: ['wan3.0-video', 'wan3.0-video-prime'], priority: 97 },
+  { service_type: 'video', provider: 'volcengine', name: 'Huobao Video · Seedance', base_url: 'https://api.firemux.com/volcengine', model: ['doubao-seedance-2-0-mini-260615', 'doubao-seedance-2-0-fast-260128', 'doubao-seedance-2-0-260128'], priority: 96 },
+  { service_type: 'video', provider: 'minimax', name: 'Huobao Video · MiniMax', base_url: 'https://api.firemux.com/minimax', model: ['MiniMax-H3'], priority: 98 },
 ]
 
 function byType(t) { return cfgs.value.filter(c => c.service_type === t) }
@@ -988,8 +989,9 @@ const selectedAgentLabel = computed(() => agentDefs.value.find(a => a.type === s
 const selectedAgentIcon = computed(() => agentDefs.value.find(a => a.type === selectedAgent.value)?.icon || '')
 
 // ===== 通用：AI 内容语言（全局设置，与界面语言相互独立） =====
-const contentLanguage = ref('zh')
+const contentLanguage = ref('th')
 const contentLangOptions = [
+  { value: 'th', label: 'ไทย', shortLabel: 'ไทย' },
   { value: 'zh', label: '中文', shortLabel: '中文' },
   { value: 'en', label: 'English', shortLabel: 'EN' },
   { value: 'ja', label: '日本語', shortLabel: '日本語' },
@@ -1018,9 +1020,8 @@ const themeOptions = computed(() => [
 
 async function loadContentLanguage() {
   try {
-    const lang = (await settingsAPI.contentLanguage())?.language || 'zh'
+    const lang = (await settingsAPI.contentLanguage())?.language || 'th'
     contentLanguage.value = lang
-    editLang.value = lang  // Agent 编辑器默认跟随内容语言
   } catch { /* 保持默认 */ }
 }
 async function setContentLanguage(lang) {

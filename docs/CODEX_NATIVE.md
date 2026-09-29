@@ -1,5 +1,11 @@
 # Codex native production
 
+## ภาษาไทย
+
+หน้าจอใช้ภาษาไทยเป็นค่าเริ่มต้นสำหรับผู้ใช้ใหม่ เปลี่ยนภาษาได้จากเมนูด้านบนหรือ **ตั้งค่า → ทั่วไป** โดยเปลี่ยนภาษาหน้าจอและภาษาที่ AI สร้างใหม่พร้อมกัน ข้อมูลบทละครและชื่อที่เคยบันทึกไว้จะคงเดิม การกด **ยกเลิก** จะไม่เปลี่ยนภาษา
+
+ขั้นตอนหลัก: **เรื่องต้นฉบับ → บทละคร → ตัวละครและฉาก → สร้างวิดีโอ → รวมคลิปและส่งออก** ปุ่ม AI ภายในแอปยังใช้ API; งานจาก Codex ทำผ่านแชตแล้วนำเข้าด้วยคำสั่งด้านล่าง
+
 Codex works in this workspace and delivers files to Huobao. This bridge never calls
 an AI API or starts another Codex process. It uses the existing SQLite schema and
 static media layout. The app's existing AI buttons still call their configured APIs;
